@@ -391,6 +391,9 @@ class PreforkServer(CommonServer):
         self.population = config['workers']
         self.timeout = config['limit_time_real']
         self.limit_request = config['limit_request']
+        self.cron_timeout = config['limit_time_real_cron'] or None
+        if self.cron_timeout == -1:
+            self.cron_timeout = self.timeout
         # working vars
         self.beat = 4
         self.app = app
@@ -769,6 +772,7 @@ class WorkerCron(Worker):
         # The variable db_index is keeping track of the next database to
         # process.
         self.db_index = 0
+        self.watchdog_timeout = multi.cron_timeout  # Use a distinct value for CRON Worker
 
     def sleep(self):
         # Really sleep once all the databases have been processed.
