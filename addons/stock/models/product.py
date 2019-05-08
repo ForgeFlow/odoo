@@ -156,6 +156,7 @@ class Product(models.Model):
         It will return all stock locations when no parameters are given
         Possible parameters are shop, warehouse, location, force_company, compute_child
         '''
+        Location = self.env['stock.location']
         Warehouse = self.env['stock.warehouse']
 
         if self.env.context.get('company_owned', False):
@@ -190,22 +191,28 @@ class Product(models.Model):
                 location_ids = self.env['stock.location'].search(domain).ids
             else:
                 location_ids = self.env.context['location']
-        else:
-            if self.env.context.get('warehouse', False):
-                if isinstance(self.env.context['warehouse'], pycompat.integer_types):
-                    wids = [self.env.context['warehouse']]
-                elif isinstance(self.env.context['warehouse'], pycompat.string_types):
-                    domain = [('name', 'ilike', self.env.context['warehouse'])]
-                    if self.env.context.get('force_company', False):
-                        domain += [('company_id', '=', self.env.context['force_company'])]
-                    wids = Warehouse.search(domain).ids
-                else:
-                    wids = self.env.context['warehouse']
+        if self.env.context.get('warehouse', False):
+            if isinstance(self.env.context['warehouse'], pycompat.integer_types):
+                wids = [self.env.context['warehouse']]
+            elif isinstance(self.env.context['warehouse'], pycompat.string_types):
+                domain = [('name', 'ilike', self.env.context['warehouse'])]
+                if self.env.context.get('force_company', False):
+                    domain += [('company_id', '=', self.env.context['force_company'])]
+                wids = Warehouse.search(domain).ids
             else:
-                wids = Warehouse.search([]).ids
-
-            for w in Warehouse.browse(wids):
-                location_ids.append(w.view_location_id.id)
+                wids = self.env.context['warehouse']
+            w_ids = set(Warehouse.browse(wids).mapped('view_location_id').ids)
+            if location_ids:
+                l_ids = set(Location.browse(location_ids).ids)
+                location_ids = l_ids & w_ids
+            else:
+                location_ids = w_ids
+        else:
+            if location_ids:
+                l_ids = set(Location.browse(location_ids).ids)
+                location_ids = l_ids
+            else:
+                location_ids = set(Warehouse.search([]).mapped('view_location_id').ids)
         return self._get_domain_locations_new(location_ids, company_id=self.env.context.get('force_company', False), compute_child=self.env.context.get('compute_child', True))
 
     def _get_domain_locations_new(self, location_ids, company_id=False, compute_child=True):
