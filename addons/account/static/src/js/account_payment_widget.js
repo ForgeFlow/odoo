@@ -2,6 +2,7 @@ odoo.define('account.payment', function (require) {
 "use strict";
 
 var core = require('web.core');
+var data = require('web.data');
 var form_common = require('web.form_common');
 var formats = require('web.formats');
 var Model = require('web.Model');
@@ -29,8 +30,9 @@ var ShowPaymentLineWidget = form_common.AbstractField.extend({
             }));
             this.$('.outstanding_credit_assign').click(function(){
                 var id = $(this).data('id') || false;
+
                 new Model("account.invoice")
-                    .call("assign_outstanding_credit", [invoice_id, id])
+                    .call("assign_outstanding_credit", [invoice_id, id], { context: new data.CompoundContext({'paid_amount': 3.0})})
                     .then(function (result) {
                         self.view.reload();
                     });

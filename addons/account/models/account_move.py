@@ -891,7 +891,11 @@ class AccountMoveLine(models.Model):
             currency = sm_credit_move.currency_id.id
             amount_reconcile_currency = min(sm_debit_move.amount_residual_currency, -sm_credit_move.amount_residual_currency)
 
-        amount_reconcile = min(sm_debit_move.amount_residual, -sm_credit_move.amount_residual)
+        paid_amt = self.env.context.get('paid_amount', False)
+        if paid_amt:
+            amount_reconcile = paid_amt
+        else:
+            amount_reconcile = min(sm_debit_move.amount_residual, -sm_credit_move.amount_residual)
 
         if self._context.get('skip_full_reconcile_check') == 'amount_currency_excluded':
             amount_reconcile_currency = 0.0
