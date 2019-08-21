@@ -259,7 +259,7 @@ class Inventory(models.Model):
             args += (self.lot_id.id,)
         #case 3: Filter on One product
         if self.product_id:
-            domain += ' AND product_id = %s'
+            domain += ' AND stock_quant.product_id = %s'
             args += (self.product_id.id,)
             products_to_filter |= self.product_id
         #case 4: Filter on A Pack
@@ -269,7 +269,7 @@ class Inventory(models.Model):
         #case 5: Filter on One product category + Exahausted Products
         if self.category_id:
             categ_products = Product.search([('categ_id', 'child_of', self.category_id.id)])
-            domain += ' AND product_id = ANY (%s)'
+            domain += ' AND stock_quant.product_id = ANY (%s)'
             args += (categ_products.ids,)
             products_to_filter |= categ_products
 
