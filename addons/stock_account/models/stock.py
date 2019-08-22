@@ -436,7 +436,7 @@ class StockMove(models.Model):
         tmpl_dict = defaultdict(lambda: 0.0)
         # adapt standard price on incomming moves if the product cost_method is 'average'
         std_price_update = {}
-        for move in self.filtered(lambda move: move._is_in() and move.product_id.cost_method == 'average'):
+        for move in self.filtered(lambda move: move._is_in() and move.with_context(force_company=move.company_id.id).product_id.cost_method == 'average'):
             product_tot_qty_available = move.product_id.with_context(owner_id=False).qty_available + tmpl_dict[move.product_id.id]
             rounding = move.product_id.uom_id.rounding
 
@@ -450,7 +450,7 @@ class StockMove(models.Model):
                 new_std_price = move._get_price_unit()
             else:
                 # Get the standard price
-                amount_unit = std_price_update.get((move.company_id.id, move.product_id.id)) or move.product_id.standard_price
+                amount_unit = std_price_update.get((move.company_id.id, move.product_id.id)) or move.with_context(force_company=move.company_id.id).product_id.standard_price
                 new_std_price = ((amount_unit * product_tot_qty_available) + (move._get_price_unit() * qty)) / (product_tot_qty_available + qty)
 
             tmpl_dict[move.product_id.id] += qty_done
@@ -552,6 +552,7 @@ class StockMove(models.Model):
         """ Return the accounts and journal to use to post Journal Entries for
         the real-time valuation of the quant. """
         self.ensure_one()
+        self = self.with_context(force_company=self.company_id.id)
         accounts_data = self.product_id.product_tmpl_id.get_product_accounts()
 
         if self.location_id.valuation_out_account_id:
