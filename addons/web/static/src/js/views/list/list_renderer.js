@@ -55,6 +55,7 @@ var ListRenderer = BasicRenderer.extend({
      * @param {boolean} params.hasSelectors
      */
     init: function (parent, state, params) {
+        var self = this;
         this._super.apply(this, arguments);
         this.columnInvisibleFields = params.columnInvisibleFields;
         this.rowDecorations = _.chain(this.arch.attrs)
@@ -64,10 +65,28 @@ var ListRenderer = BasicRenderer.extend({
                 return py.parse(py.tokenize(value));
             }).value();
         this.hasSelectors = params.hasSelectors;
+        this.lastSelectedRow = false;
         this.selection = params.selectedRecords || [];
         this.pagers = []; // instantiated pagers (only for grouped lists)
         this.isGrouped = this.state.groupedBy.length > 0;
         this.groupbys = params.groupbys;
+        this.shiftPressed = false
+
+        // Is this okay here?
+        // This event listeners are meant to prevent selection and record whether shift key is pressed or not
+        document.onselectstart = function() {
+            return false;
+        }
+        $(document).keydown(function (ev) {
+            if (ev.keyCode == 16) {
+                self.shiftPressed = true;
+            }
+        });
+        $(document).keyup(function (ev) {
+            if (ev.keyCode == 16) {
+                self.shiftPressed = false;
+            }
+        });
     },
     /**
      * Compute columns visilibity. This can't be done earlier as we need the
@@ -1209,6 +1228,22 @@ var ListRenderer = BasicRenderer.extend({
      */
     _onSelectRecord: function (ev) {
         ev.stopPropagation();
+        // Allows multiple selection using the shiftKey. Gets selected row and last selection and manually checks all
+        // the boxes from the rows in between the selected items.
+        const selectedRow = event.target.closest('tr');
+        if (this.shiftPressed && this.lastSelectedRow && this.lastSelectedRow != selectedRow) {
+            const lastSelectedIndex = $("tr").index(this.lastSelectedRow);
+            const selectedIndex = $("tr").index(selectedRow);
+            const indexes = _.range(Math.min(selectedIndex, lastSelectedIndex), Math.max(selectedIndex, lastSelectedIndex))
+            $(selectedRow).siblings().addBack().each(function(i, el) {
+                if ($.inArray(i,indexes)>-1) {
+                    if (el != selectedRow) {
+                        $(el).find('.o_list_record_selector input:not(":disabled")').prop('checked', true)
+                    }
+                };
+            });
+        }
+        this.lastSelectedRow = selectedRow;
         this._updateSelection();
     },
     /**
