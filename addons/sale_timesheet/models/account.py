@@ -58,7 +58,7 @@ class AccountAnalyticLine(models.Model):
         # (re)compute the amount (depending on unit_amount, employee_id for the cost, and account_id for currency)
         if any([field_name in values for field_name in ['unit_amount', 'employee_id', 'account_id']]):
             for timesheet in sudo_self:
-                uom = timesheet.employee_id.company_id.project_time_mode_id or timesheet.product_uom_id
+                uom = timesheet.employee_id.company_id.project_time_mode_id or timesheet.product_uom_id or self.env.user.company_id.project_time_mode_id
                 if not uom:
                     continue
                 cost = timesheet.employee_id.timesheet_cost or 0.0
