@@ -406,17 +406,17 @@ class Module(models.Model):
 
             # Determine which auto-installable modules must be installed.
             modules = self.search(auto_domain).filtered(must_install)
-
+    
         # the modules that are installed/to install/to upgrade
         install_mods = self.search([('state', 'in', list(install_states))])
 
         # check individual exclusions
         install_names = {module.name for module in install_mods}
-        for module in install_mods:
-            for exclusion in module.exclusion_ids:
-                if exclusion.name in install_names:
-                    msg = _('Modules "%s" and "%s" are incompatible.')
-                    raise UserError(msg % (module.shortdesc, exclusion.exclusion_id.shortdesc))
+        # for module in install_mods:
+        #     for exclusion in module.exclusion_ids:
+        #         if exclusion.name in install_names:
+        #             msg = _('Modules "%s" and "%s" are incompatible.')
+        #             raise UserError(msg % (module.shortdesc, exclusion.exclusion_id.shortdesc))
 
         # check category exclusions
         def closure(module):
