@@ -792,6 +792,18 @@ class MrpProduction(models.Model):
                     original_one = temp_workorders[0]
         return workorders
 
+    def _prepare_workorder(self, operation, workorders, quantity):
+        return {
+            'name': operation.name,
+            'production_id': self.id,
+            'workcenter_id': operation.workcenter_id.id,
+            'product_uom_id': self.product_id.uom_id.id,
+            'operation_id': operation.id,
+            'state': len(workorders) == 0 and 'ready' or 'pending',
+            'qty_producing': quantity,
+            'consumption': self.bom_id.consumption,
+        }
+
     def _workorders_create(self, bom, bom_data):
         """
         :param bom: in case of recursive boms: we could create work orders for child
@@ -806,16 +818,9 @@ class MrpProduction(models.Model):
             quantity = 1.0
 
         for operation in bom.routing_id.operation_ids:
-            workorder = workorders.create({
-                'name': operation.name,
-                'production_id': self.id,
-                'workcenter_id': operation.workcenter_id.id,
-                'product_uom_id': self.product_id.uom_id.id,
-                'operation_id': operation.id,
-                'state': len(workorders) == 0 and 'ready' or 'pending',
-                'qty_producing': quantity,
-                'consumption': self.bom_id.consumption,
-            })
+            workorder_vals = self._prepare_workorder(
+                operation, workorders, quantity)
+            workorder = workorders.create(workorder_vals)
             if workorders:
                 workorders[-1].next_work_order_id = workorder.id
                 workorders[-1]._start_nextworkorder()
