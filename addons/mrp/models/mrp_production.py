@@ -496,6 +496,10 @@ class MrpProduction(models.Model):
         return res
 
     @api.model
+    def prepare_procurement_group(self, values):
+        return {'name': values['name']}
+
+    @api.model
     def create(self, values):
         if not values.get('name', False) or values['name'] == _('New'):
             picking_type_id = values.get('picking_type_id') or self._get_default_picking_type()
@@ -505,7 +509,8 @@ class MrpProduction(models.Model):
             else:
                 values['name'] = self.env['ir.sequence'].next_by_code('mrp.production') or _('New')
         if not values.get('procurement_group_id'):
-            values['procurement_group_id'] = self.env["procurement.group"].create({'name': values['name']}).id
+            procurement_group_vals = self.prepare_procurement_group(values)
+            values['procurement_group_id'] = self.env["procurement.group"].create(procurement_group_vals).id
         production = super(MrpProduction, self).create(values)
         production.move_raw_ids.write({
             'group_id': production.procurement_group_id.id,
