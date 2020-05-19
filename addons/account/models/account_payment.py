@@ -475,6 +475,7 @@ class account_payment(models.Model):
         transfer_debit_aml_dict.update({
             'name': self.name,
             'payment_id': self.id,
+            # 'account_analytic_id': self.account_analytic_id.id,
             'account_id': self.company_id.transfer_account_id.id,
             'journal_id': self.destination_journal_id.id})
         if self.currency_id != self.company_id.currency_id:
