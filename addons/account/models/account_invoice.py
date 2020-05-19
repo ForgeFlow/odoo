@@ -1193,6 +1193,52 @@ class AccountInvoice(models.Model):
         return res
 
     @api.model
+    def invoice_line_move_line_payment_term_get(self, inv, name, t, diff_currency, amount_currency):
+        res = []
+        total_all = sum(self.invoice_line_ids.mapped('price_subtotal'))
+        # we split payable between analytic accounts
+        aas = self.invoice_line_ids.mapped('account_analytic_id')
+
+        no_aa_lines = self.invoice_line_ids.filtered(lambda il: not il.account_analytic_id)
+        if sum(no_aa_lines.mapped('quantity'))!=0:
+            analytic_tag_ids = [(4, analytic_tag.id, None) for analytic_tag in no_aa_lines.mapped('analytic_tag_ids')]
+            try:
+                percentage = sum(no_aa_lines.mapped('price_subtotal')) / total_all
+            except ZeroDivisionError:
+                percentage = 1.0            
+            
+            move_line_dict = {
+                'type': 'dest',
+                'name': name,
+                'price': t[1]*percentage,
+                'account_id': inv.account_id.id,
+                'invoice_id': self.id,
+                'date_maturity': t[0],
+                'amount_currency': diff_currency*percentage and amount_currency*percentage,
+                'currency_id': diff_currency*percentage and inv.currency_id.id,
+            }
+            res.append(move_line_dict)            
+        for aa in aas:
+            lines = self.invoice_line_ids.filtered(lambda ail: ail.account_analytic_id == aa)
+            if sum(lines.mapped('quantity'))==0:
+                continue
+            analytic_tag_ids = [(4, analytic_tag.id, None) for analytic_tag in lines.mapped('analytic_tag_ids')]
+            percentage = sum(lines.mapped('price_subtotal')) / total_all
+            move_line_dict = {
+                'type': 'dest',
+                'name': name,
+                'price': t[1]*percentage,
+                'account_id': inv.account_id.id,
+                'account_analytic_id': aa.id,
+                'invoice_id': self.id,
+                'date_maturity': t[0],
+                'amount_currency': diff_currency*percentage and amount_currency*percentage,
+                'currency_id': diff_currency*percentage and inv.currency_id.id,
+            }
+            res.append(move_line_dict)
+        return res
+
+    @api.model
     def tax_line_move_line_get(self):
         res = []
         # keep track of taxes already processed
@@ -1260,6 +1306,32 @@ class AccountInvoice(models.Model):
                 line.append((0, 0, val))
         return line
 
+    @api.model
+    def invoice_line_move_line_payable_receivable(self, inv, name, diff_currency, total_currency, total):
+        res = []
+        total_all = sum(self.invoice_line_ids.mapped('price_subtotal'))
+        for line in self.invoice_line_ids:
+            try:
+                percentage = sum(line.mapped('price_subtotal')) / total_all
+            except ZeroDivisionError:
+                percentage = 1.0
+            diff_currency_percentage = diff_currency * percentage
+            total_currency_percentage = total_currency * percentage
+            total_percentage = total * percentage
+            move_line_dict = {
+                    'type': 'dest',
+                    'name': name,
+                    'price': total_percentage,
+                    'account_id': inv.account_id.id,
+                    'account_analytic_id': line.account_analytic_id.id,
+                    'date_maturity': inv.date_due,
+                    'amount_currency': diff_currency_percentage and total_currency_percentage,
+                    'currency_id':  diff_currency_percentage and inv.currency_id.id,
+                    'invoice_id': inv.id
+                }
+            res.append(move_line_dict)
+        return res
+
     @api.multi
     def action_move_create(self):
         """ Creates invoice related analytics and financial move lines """
@@ -1303,27 +1375,11 @@ class AccountInvoice(models.Model):
                     if i + 1 == len(totlines):
                         amount_currency += res_amount_currency
 
-                    iml.append({
-                        'type': 'dest',
-                        'name': name,
-                        'price': t[1],
-                        'account_id': inv.account_id.id,
-                        'date_maturity': t[0],
-                        'amount_currency': diff_currency and amount_currency,
-                        'currency_id': diff_currency and inv.currency_id.id,
-                        'invoice_id': inv.id
-                    })
+                    imlp = self.invoice_line_move_line_payment_term_get(inv, name, t, diff_currency, amount_currency)
+                    iml += imlp
             else:
-                iml.append({
-                    'type': 'dest',
-                    'name': name,
-                    'price': total,
-                    'account_id': inv.account_id.id,
-                    'date_maturity': inv.date_due,
-                    'amount_currency': diff_currency and total_currency,
-                    'currency_id': diff_currency and inv.currency_id.id,
-                    'invoice_id': inv.id
-                })
+                # missing this
+                iml += self.invoice_line_move_line_payable_receivable(inv, name, diff_currency, total_currency, total)
             part = self.env['res.partner']._find_accounting_partner(inv.partner_id)
             line = [(0, 0, self.line_get_convert(l, part.id)) for l in iml]
             line = inv.group_lines(iml, line)
