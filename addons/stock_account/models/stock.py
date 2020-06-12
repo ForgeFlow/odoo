@@ -84,6 +84,15 @@ class StockQuant(models.Model):
             if quant.product_id.cost_method == 'real' and quant.location_id.usage != 'internal':
                 move._store_average_cost_price()
 
+    @api.model
+    def _prepare_anglosaxon_dropshipping_move(self, move):
+        # Creates an account entry from stock_input to stock_output on a dropship move. https://github.com/odoo/odoo/issues/12687
+        journal_id, acc_src, acc_dest, acc_valuation = move._get_accounting_data_for_valuation()
+        if move.location_id.usage == 'supplier' and move.location_dest_id.usage == 'customer':
+            self.with_context(force_company=move.company_id.id)._create_account_move_line(move, acc_src, acc_dest, journal_id)
+        if move.location_id.usage == 'customer' and move.location_dest_id.usage == 'supplier':
+            self.with_context(force_company=move.company_id.id)._create_account_move_line(move, acc_dest, acc_src, journal_id)        
+
     def _account_entry_move(self, move):
         """ Accounting Valuation Entries """
         if move.product_id.type != 'product' or move.product_id.valuation != 'real_time':
@@ -119,12 +128,8 @@ class StockQuant(models.Model):
                 self.with_context(force_company=company_from.id)._create_account_move_line(move, acc_valuation, acc_dest, journal_id)
 
         if move.company_id.anglo_saxon_accounting:
-            # Creates an account entry from stock_input to stock_output on a dropship move. https://github.com/odoo/odoo/issues/12687
-            journal_id, acc_src, acc_dest, acc_valuation = move._get_accounting_data_for_valuation()
-            if move.location_id.usage == 'supplier' and move.location_dest_id.usage == 'customer':
-                self.with_context(force_company=move.company_id.id)._create_account_move_line(move, acc_src, acc_dest, journal_id)
-            if move.location_id.usage == 'customer' and move.location_dest_id.usage == 'supplier':
-                self.with_context(force_company=move.company_id.id)._create_account_move_line(move, acc_dest, acc_src, journal_id)
+            # hook to use custom accounts and not take stock input or stock output
+            self._prepare_anglosaxon_dropshipping_move(move)
 
     def _create_account_move_line(self, move, credit_account_id, debit_account_id, journal_id):
         # group quants by cost
