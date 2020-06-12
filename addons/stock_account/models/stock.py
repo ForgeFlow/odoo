@@ -714,12 +714,8 @@ class StockMove(models.Model):
                 self.with_context(force_company=company_from.id)._create_account_move_line(acc_valuation, acc_dest, journal_id)
 
         if self.company_id.anglo_saxon_accounting:
-            # Creates an account entry from stock_input to stock_output on a dropship move. https://github.com/odoo/odoo/issues/12687
-            journal_id, acc_src, acc_dest, acc_valuation = self._get_accounting_data_for_valuation()
-            if self._is_dropshipped():
-                self.with_context(force_company=self.company_id.id)._create_account_move_line(acc_src, acc_dest, journal_id)
-            elif self._is_dropshipped_returned():
-                self.with_context(force_company=self.company_id.id)._create_account_move_line(acc_dest, acc_src, journal_id)
+            # hook to use custom accounts and not take stock input or stock output
+            self._prepare_anglosaxon_dropshipping_move(move) 
 
         if self.company_id.anglo_saxon_accounting:
             #eventually reconcile together the invoice and valuation accounting entries on the stock interim accounts
@@ -732,6 +728,14 @@ class StockMove(models.Model):
         """
         return self.env['account.invoice']
 
+    @api.model
+    def _prepare_anglosaxon_dropshipping_move(self, move):
+        # Creates an account entry from stock_input to stock_output on a dropship move. https://github.com/odoo/odoo/issues/12687
+        journal_id, acc_src, acc_dest, acc_valuation = self._get_accounting_data_for_valuation()
+        if self._is_dropshipped():
+            self.with_context(force_company=self.company_id.id)._create_account_move_line(acc_src, acc_dest, journal_id)
+        elif self._is_dropshipped_returned():
+            self.with_context(force_company=self.company_id.id)._create_account_move_line(acc_dest, acc_src, journal_id)
 
 class StockReturnPicking(models.TransientModel):
     _inherit = "stock.return.picking"
