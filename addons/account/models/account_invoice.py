@@ -1310,7 +1310,38 @@ class AccountInvoice(models.Model):
     def invoice_line_move_line_payable_receivable(self, inv, name, diff_currency, total_currency, total):
         res = []
         total_all = sum(self.invoice_line_ids.mapped('price_subtotal'))
+        if not len(inv.invoice_line_ids.mapped('account_analytic_id')):
+            # follow standard behavior in case no analytic account in any line
+            move_line_dict = {
+                    'type': 'dest',
+                    'name': name,
+                    'price': total,
+                    'account_id': inv.account_id.id,
+                    'date_maturity': inv.date_due,
+                    'amount_currency': diff_currency and diff_currency,
+                    'currency_id':  diff_currency and inv.currency_id.id,
+                    'invoice_id': inv.id
+                }
+            res.append(move_line_dict)
+            return res
+        elif len(inv.invoice_line_ids.mapped('account_analytic_id')) == 1 and not any(l.account_analytic_id.id == False for l in inv.invoice_line_ids):
+            # all lines with same analytic account and no line without analytic account
+            move_line_dict = {
+                    'type': 'dest',
+                    'name': name,
+                    'price': total,
+                    'account_id': inv.account_id.id,
+                    'account_analytic_id': inv.invoice_line_ids.mapped('account_analytic_id')[0].id,
+                    'date_maturity': inv.date_due,
+                    'amount_currency': diff_currency and diff_currency,
+                    'currency_id':  diff_currency and inv.currency_id.id,
+                    'invoice_id': inv.id
+                }
+            res.append(move_line_dict)
+            return res
+
         for line in self.invoice_line_ids:
+            # at least 2 analytic accounts or mixing analytic account with no analytic at all
             try:
                 percentage = sum(line.mapped('price_subtotal')) / total_all
             except ZeroDivisionError:
