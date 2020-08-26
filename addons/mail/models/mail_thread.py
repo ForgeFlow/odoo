@@ -2109,7 +2109,8 @@ class MailThread(models.AbstractModel):
 
             # Post-process: subscribe author
             if msg_vals['author_id'] and msg_vals['model'] and self.ids and msg_vals['message_type'] != 'notification' and not self._context.get('mail_create_nosubscribe'):
-                self._message_subscribe([msg_vals['author_id']])
+                if self.env['res.partner'].browse(msg_vals['author_id']).active:  # we dont want to add odoobot/inactive as a follower
+                    self._message_subscribe([msg_vals['author_id']])
         else:
             message._notify_pending_by_chat()
 
@@ -2426,13 +2427,13 @@ class MailThread(models.AbstractModel):
         if udpated_fields:
             # fetch "parent" subscription data (aka: subtypes on project to propagate on task)
             doc_data = [(model, [updated_values[fname] for fname in fnames]) for model, fnames in updated_relation.items()]
-            res = self.env['mail.followers']._get_subscription_data(doc_data, None, None, include_pshare=True)
-            for fid, rid, pid, cid, subtype_ids, pshare in res:
+            res = self.env['mail.followers']._get_subscription_data(doc_data, None, None, include_pshare=True, include_active=True)
+            for fid, rid, pid, cid, subtype_ids, pshare, active in res:
                 # use project.task_new -> task.new link
                 sids = [parent[sid] for sid in subtype_ids if parent.get(sid)]
                 # add checked subtypes matching model_name
                 sids += [sid for sid in subtype_ids if sid not in parent and sid in child_ids]
-                if pid:
+                if pid and active:  # auto subscribe only active partners
                     if pshare:  # remove internal subtypes for customers
                         new_partners[pid] = set(sids) - set(all_int_ids)
                     else:
