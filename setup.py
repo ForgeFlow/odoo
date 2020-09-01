@@ -152,7 +152,7 @@ setup(
         'psycopg2 >= 2.2',
         'python-chart',
         'pydot',
-        'pyldap',  # optional
+#        'pyldap',  # optional
         'pyparsing',
         'pypdf',
         'pyserial',
