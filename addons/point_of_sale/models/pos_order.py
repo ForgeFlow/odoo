@@ -530,6 +530,13 @@ class PosOrder(models.Model):
                 # It may be interesting to have the Traceback logged anyway
                 # for debugging and support purposes
                 _logger.exception('Reconciliation did not work for order %s', order.name)
+        # Looks for the remaining not reconciled account move lines related to
+        # the POS session with same partner and reconcile them
+        amls = self.env['account.move.line']
+        for order in self:
+            amls |= order.statement_ids.mapped('journal_entry_ids') | order.account_move.line_ids | order.invoice_id.move_id.line_ids
+        amls = amls.filtered(lambda r: not r.reconciled and r.account_id.internal_type == 'receivable' and r.partner_id == order.partner_id.commercial_partner_id)
+        amls.reconcile()
 
     def _filtered_for_reconciliation(self):
         filter_states = ['invoiced', 'done']
