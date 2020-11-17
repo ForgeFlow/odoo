@@ -355,6 +355,8 @@ class ProcurementGroup(models.Model):
                 product_context = dict(self._context, location=location_orderpoints[0].location_id.id)
                 substract_quantity = location_orderpoints._quantity_in_progress()
 
+                procure_location_qty = location_orderpoints._quantity_in_progress_procured()
+
                 for group in location_data['groups']:
                     if group.get('from_date'):
                         product_context['from_date'] = group['from_date'].strftime(DEFAULT_SERVER_DATETIME_FORMAT)
@@ -364,10 +366,12 @@ class ProcurementGroup(models.Model):
                     for orderpoint in location_orderpoints:
                         try:
                             op_product_virtual = product_quantity[orderpoint.product_id.id]['virtual_available']
+                            op_product_virtual += procure_location_qty[orderpoint.id]
                             if op_product_virtual is None:
                                 continue
                             if float_compare(op_product_virtual, orderpoint.product_min_qty, precision_rounding=orderpoint.product_uom.rounding) <= 0:
                                 qty = max(orderpoint.product_min_qty, orderpoint.product_max_qty) - op_product_virtual
+
                                 remainder = orderpoint.qty_multiple > 0 and qty % orderpoint.qty_multiple or 0.0
 
                                 if float_compare(remainder, 0.0, precision_rounding=orderpoint.product_uom.rounding) > 0:
@@ -377,6 +381,7 @@ class ProcurementGroup(models.Model):
                                     continue
 
                                 qty -= substract_quantity[orderpoint.id]
+
                                 qty_rounded = float_round(qty, precision_rounding=orderpoint.product_uom.rounding)
                                 if qty_rounded > 0:
                                     values = orderpoint._prepare_procurement_values(qty_rounded, **group['procurement_values'])

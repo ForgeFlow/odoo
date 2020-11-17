@@ -822,6 +822,10 @@ class Orderpoint(models.Model):
         (example: purchases created from orderpoints)"""
         return dict(self.mapped(lambda x: (x.id, 0.0)))
 
+    def _quantity_in_progress_procured(self):
+        """Return Quantities that are not yet in virtual stock but are procured in the procure location"""
+        return dict(self.mapped(lambda x: (x.id, 0.0)))
+
     @api.constrains('product_id')
     def _check_product_uom(self):
         ''' Check if the UoM has the same category as the product standard UoM '''
