@@ -24,4 +24,5 @@ It also enables the "optional products" feature.
         'data/sale_demo.xml',
     ],
     'license': 'LGPL-3',
+    'installable': False,
 }
