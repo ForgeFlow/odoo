@@ -41,4 +41,5 @@
         ],
     },
     'license': 'LGPL-3',
+    'installable': False,
 }

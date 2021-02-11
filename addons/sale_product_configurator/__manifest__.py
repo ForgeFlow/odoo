@@ -40,4 +40,5 @@ It also enables the "optional products" feature.
         ],
     },
     'license': 'LGPL-3',
+    'installable': False,
 }
