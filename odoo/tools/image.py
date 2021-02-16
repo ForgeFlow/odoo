@@ -48,7 +48,7 @@ EXIF_TAG_ORIENTATION_TO_TRANSPOSE_METHODS = { # Initial side on 1st row/col:
 
 # Arbitraty limit to fit most resolutions, including Samsung Galaxy A22 photo,
 # 8K with a ratio up to 16:10, and almost all variants of 4320p
-IMAGE_MAX_RESOLUTION = 50e6
+IMAGE_MAX_RESOLUTION = 50e7
 
 
 class ImageProcess():
