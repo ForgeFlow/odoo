@@ -584,6 +584,7 @@ class StockQuant(models.Model):
         return {
             'name': _('Product Quantity Updated'),
             'product_id': self.product_id.id,
+            'product_tmpl_id': self.product_id.product_tmpl_id.id,
             'product_uom': self.product_uom_id.id,
             'product_uom_qty': qty,
             'company_id': self.company_id.id or self.env.company.id,
