@@ -737,7 +737,13 @@ class Import(models.TransientModel):
         # if we have two non-numbers *and* the last one has a count of 1,
         # we probably have grouping & decimal separators
         if len(counts) == 2 and counts[non_number[-1]] == 1:
-            return [character for character, _count in counts.most_common()]
+            # if both values have a count of 1 return them in the same order as they
+            # were found (can't use the Counter since order is not maintained before
+            # python 3.7)
+            separators = [character for character, _count in counts.most_common()]
+            if counts[non_number[0]] == 1:
+                separators = non_number
+            return separators
 
         # otherwise get whatever's in the options, or fallback to a default
         thousand_separator = options.get('float_thousand_separator', ' ')
