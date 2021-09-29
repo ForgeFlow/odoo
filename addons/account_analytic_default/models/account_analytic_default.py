@@ -69,7 +69,7 @@ class AccountInvoiceLine(models.Model):
         if set(['account_analytic_id', 'analytic_tag_ids']) & set(fields_list):
             rec = self.env['account.analytic.default'].account_get(
                 self.product_id.id,
-                self.invoice_id.commercial_partner_id.id,
+                self.invoice_id.partner_id.id,
                 self.invoice_id.user_id.id or self.env.uid,
                 fields.Date.today(),
                 company_id=self.company_id.id
@@ -90,7 +90,7 @@ class AccountInvoiceLine(models.Model):
         res = super(AccountInvoiceLine, self)._onchange_product_id()
         rec = self.env['account.analytic.default'].account_get(
             self.product_id.id,
-            self.invoice_id.commercial_partner_id.id,
+            self.invoice_id.partner_id.id,
             self.invoice_id.user_id.id or self.env.uid,
             fields.Date.today(),
             company_id=self.company_id.id
@@ -104,7 +104,7 @@ class AccountInvoiceLine(models.Model):
         if not self.account_analytic_id or not self.analytic_tag_ids:
             rec = self.env['account.analytic.default'].account_get(
                 self.product_id.id,
-                self.invoice_id.commercial_partner_id.id,
+                self.invoice_id.partner_id.id,
                 self.invoice_id.user_id.id or self.env.uid,
                 fields.Date.today(),
                 company_id=invoice.company_id.id
