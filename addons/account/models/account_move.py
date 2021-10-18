@@ -2202,14 +2202,13 @@ class AccountMove(models.Model):
                 invoice_repartition_lines = taxes\
                     .mapped('invoice_repartition_line_ids')\
                     .filtered(lambda line: line.repartition_type == 'base')
-                refund_repartition_lines = invoice_repartition_lines\
-                    .mapped(lambda line: tax_repartition_lines_mapping[line])
-
-                tag_ids = []
-                for refund_repartition_line in refund_repartition_lines:
-                    tag_ids += invert_tags_if_needed(refund_repartition_line, refund_repartition_line.tag_ids).ids
-
-                line_vals['tag_ids'] = [(6, 0, tag_ids)]
+                if invoice_repartition_lines:
+                    refund_repartition_lines = invoice_repartition_lines\
+                        .mapped(lambda line: tax_repartition_lines_mapping[line])
+                    tag_ids = []
+                    for refund_repartition_line in refund_repartition_lines:
+                        tag_ids += invert_tags_if_needed(refund_repartition_line, refund_repartition_line.tag_ids).ids
+                        line_vals['tag_ids'] = [(6, 0, tag_ids)]
         return move_vals
 
     def _reverse_moves(self, default_values_list=None, cancel=False):
