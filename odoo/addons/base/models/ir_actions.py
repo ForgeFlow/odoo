@@ -112,7 +112,7 @@ class IrActions(models.Model):
                     # the user may not perform this action
                     continue
                 result[binding_type].append(action.read()[0])
-            except (AccessError, MissingError):
+            except (AccessError, MissingError, IndexError):
                 continue
 
         return result
