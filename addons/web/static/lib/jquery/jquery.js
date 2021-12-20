@@ -5419,7 +5419,11 @@ jQuery.Event.prototype = {
 		this.isDefaultPrevented = returnTrue;
 
 		if ( e && !this.isSimulated ) {
-			e.preventDefault();
+		if (typeof e.changedTouches === 'undefined') {
+		     e.preventDefault();
+		} else if (e.changedTouches?.length > 1) {
+			 e.preventDefault();
+			}
 		}
 	},
 	stopPropagation: function() {
