@@ -5,8 +5,9 @@ from psycopg2 import IntegrityError
 
 from odoo.addons.test_mail.tests import common
 from odoo.addons.test_mail.tests.common import mail_new_test_user
-from odoo.tools.misc import mute_logger
 from odoo.tests import tagged
+from odoo.tools.misc import mute_logger
+from odoo.tests.common import users
 
 
 @tagged('mail_followers')
@@ -143,6 +144,18 @@ class BaseFollowersTest(common.BaseFunctionalTest):
             partner_ids=[self.user_employee.partner_id.id, self.user_admin.partner_id.id],
             channel_ids=[self.channel_listen.id]
         )
+
+    @users('employee')
+    def test_recipients_fetch_pids_only(self):
+        """ Test that _get_recipient_data correctly fetch groups for additional pids
+        """
+        users = self.user_admin + self.user_employee + self.user_portal
+        recipient_data = self.env['mail.followers']._get_recipient_data(self.env['mail.thread'], False, False, pids=users.partner_id.ids)
+        groups = {pid: set(groups) for pid, _, _, _, _, _, groups in recipient_data}
+
+        self.assertEqual(groups[self.user_admin.partner_id.id], set(self.user_admin.groups_id.ids), "User Admin groups are not correctly fetched")
+        self.assertEqual(groups[self.user_employee.partner_id.id], set(self.user_employee.groups_id.ids), "User Employee groups are not correctly fetched")
+        self.assertEqual(groups[self.user_portal.partner_id.id], set(self.user_portal.groups_id.ids), "User Portal groups are not correctly fetched")
 
 
 @tagged('mail_followers')
