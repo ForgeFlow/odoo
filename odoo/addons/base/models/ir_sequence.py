@@ -210,7 +210,8 @@ class IrSequence(models.Model):
                 res[key] = effective_date.strftime(format)
                 res['range_' + key] = range_date.strftime(format)
                 res['current_' + key] = now.strftime(format)
-
+            _ABC = 'ABCDEFGHIJKL'
+            res['month_abc'] = _ABC[int(range_date.strftime('%m'))-1]
             return res
 
         self.ensure_one()
