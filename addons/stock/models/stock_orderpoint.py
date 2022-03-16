@@ -492,7 +492,9 @@ class StockWarehouseOrderpoint(models.Model):
 
                 try:
                     with self.env.cr.savepoint():
+                        _logger.info("FF TEST: _procure_orderpoint_confirm 1")
                         self.env['procurement.group'].with_context(from_orderpoint=True).run(procurements, raise_user_error=raise_user_error)
+                        _logger.info("FF TEST: _procure_orderpoint_confirm 2")
                 except ProcurementException as errors:
                     for procurement, error_msg in errors.procurement_exceptions:
                         orderpoints_exceptions += [(procurement.values.get('orderpoint_id'), error_msg)]
@@ -512,6 +514,7 @@ class StockWarehouseOrderpoint(models.Model):
                     orderpoints_batch._post_process_scheduler()
                     break
 
+            _logger.info("FF TEST: _procure_orderpoint_confirm 3")
             # Log an activity on product template for failed orderpoints.
             for orderpoint, error_msg in orderpoints_exceptions:
                 existing_activity = self.env['mail.activity'].search([
@@ -531,6 +534,7 @@ class StockWarehouseOrderpoint(models.Model):
                 finally:
                     cr.close()
 
+            _logger.info("FF TEST: _procure_orderpoint_confirm 4")
         return {}
 
     def _post_process_scheduler(self):

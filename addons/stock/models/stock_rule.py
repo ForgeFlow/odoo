@@ -517,28 +517,36 @@ class ProcurementGroup(models.Model):
 
     @api.model
     def _run_scheduler_tasks(self, use_new_cursor=False, company_id=False):
+        _logger.info("FF TEST: _run_scheduler_tasks 1")
         # Minimum stock rules
         domain = self._get_orderpoint_domain(company_id=company_id)
         orderpoints = self.env['stock.warehouse.orderpoint'].search(domain)
+        _logger.info("FF TEST: _run_scheduler_tasks 2 - OPs: %s" % len(orderpoints))
         # ensure that qty_* which depends on datetime.now() are correctly
         # recomputed
         orderpoints.sudo()._compute_qty_to_order()
-        orderpoints.sudo()._procure_orderpoint_confirm(use_new_cursor=use_new_cursor, company_id=company_id, raise_user_error=False)
+        _logger.info("FF TEST: _run_scheduler_tasks 3")
+        orderpoints.sudo()._procure_orderpoint_confirm(
+            use_new_cursor=use_new_cursor, company_id=company_id,
+            raise_user_error=False)
+        _logger.info("FF TEST: _run_scheduler_tasks 4")
         if use_new_cursor:
             self._cr.commit()
 
         # Search all confirmed stock_moves and try to assign them
         domain = self._get_moves_to_assign_domain(company_id)
         moves_to_assign = self.env['stock.move'].search(domain, limit=None,
-            order='priority desc, date asc, id asc')
+                                                        order='priority desc, date asc, id asc')
+        _logger.info("FF TEST: _run_scheduler_tasks 5 - moves: %s" % len(moves_to_assign))
         for moves_chunk in split_every(100, moves_to_assign.ids):
             self.env['stock.move'].browse(moves_chunk).sudo()._action_assign()
+            _logger.info("FF TEST: _run_scheduler_tasks 5 - chunk done")
             if use_new_cursor:
                 self._cr.commit()
-
+        _logger.info("FF TEST: _run_scheduler_tasks 6")
         # Merge duplicated quants
         self.env['stock.quant']._quant_tasks()
-
+        _logger.info("FF TEST: _run_scheduler_tasks 7")
         if use_new_cursor:
             self._cr.commit()
 
@@ -566,7 +574,7 @@ class ProcurementGroup(models.Model):
 
     @api.model
     def _get_orderpoint_domain(self, company_id=False):
-        domain = [('trigger', '=', 'auto'), ('product_id.active', '=', True)]
+        domain = [('trigger', '=', 'auto'), ('product_id.active', '=', True), ('qty_to_order', '>', 0.0)]
         if company_id:
             domain += [('company_id', '=', company_id)]
         return domain
