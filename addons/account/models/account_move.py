@@ -15,6 +15,9 @@ import ast
 import json
 import re
 import warnings
+import logging
+
+_logger = logging.getLogger(__name__)
 
 #forbidden fields
 INTEGRITY_HASH_MOVE_FIELDS = ('date', 'journal_id', 'company_id')
@@ -656,6 +659,7 @@ class AccountMove(models.Model):
             return balance_taxes_res
 
         taxes_map = {}
+        _logger.info("FF TEST: taxes_map 1: %s" % taxes_map)
 
         # ==== Add tax lines ====
         to_remove = self.env['account.move.line']
@@ -673,6 +677,7 @@ class AccountMove(models.Model):
                     'tax_base_amount': 0.0,
                     'grouping_dict': False,
                 }
+                _logger.info("FF TEST: taxes_map 2: %s" % taxes_map)
         if not recompute_tax_base_amount:
             self.line_ids -= to_remove
 
@@ -707,14 +712,18 @@ class AccountMove(models.Model):
                     'tax_base_amount': 0.0,
                     'grouping_dict': False,
                 })
+                _logger.info("FF TEST: taxes_map 3: %s" % taxes_map)
                 taxes_map_entry['amount'] += tax_vals['amount']
                 taxes_map_entry['tax_base_amount'] += self._get_base_amount_to_display(tax_vals['base'], tax_repartition_line, tax_vals['group'])
                 taxes_map_entry['grouping_dict'] = grouping_dict
+                _logger.info("FF TEST: taxes_map 4: %s" % taxes_map)
             if not recompute_tax_base_amount:
                 line.tax_exigible = tax_exigible
 
         # ==== Pre-process taxes_map ====
+        _logger.info("FF TEST: taxes_map 5: %s" % taxes_map)
         taxes_map = self._preprocess_taxes_map(taxes_map)
+        _logger.info("FF TEST: taxes_map 6: %s" % taxes_map)
 
         # ==== Process taxes_map ====
         for taxes_map_entry in taxes_map.values():
