@@ -127,7 +127,7 @@ class AccountTax(models.Model):
 
         base_line = lines.filtered(lambda x: x.repartition_type == 'base')
         if len(base_line) != 1:
-            raise ValidationError(_("Invoice and credit note distribution should each contain exactly one line for the base."))
+            raise ValidationError(_("Invoice and credit note distribution should each contain exactly one line for the base. (ID %s - name: %s)") % (self.id, self.name))
 
     @api.constrains('invoice_repartition_line_ids', 'refund_repartition_line_ids')
     def _validate_repartition_lines(self):
