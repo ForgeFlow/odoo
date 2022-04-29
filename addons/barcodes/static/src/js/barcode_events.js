@@ -275,7 +275,7 @@ var BarcodeEvents = core.Class.extend(mixins.PropertiesMixin, {
         // This fix is only applied for Google Chrome Mobile but it should work for
         // all other cases.
         // In master, we could remove the behavior with keypress and only use keydown.
-        if (this.isChromeMobile) {
+        if (false) {
             $('body').on("keydown", this._listenBarcodeScanner.bind(this));
         } else {
             $('body').bind("keypress", this.__handler);
