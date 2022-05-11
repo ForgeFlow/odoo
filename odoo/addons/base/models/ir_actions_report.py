@@ -706,6 +706,7 @@ class IrActionsReport(models.Model):
 
         # We have to close the streams after PdfFileWriter's call to write()
         close_streams(streams)
+        _logger.info('caquita2: ' + str(result))
         return result
 
     def _get_unreadable_pdfs(self, streams):
@@ -755,6 +756,7 @@ class IrActionsReport(models.Model):
         # In case of test environment without enough workers to perform calls to wkhtmltopdf,
         # fallback to render_html.
         if (tools.config['test_enable'] or tools.config['test_file']) and not self.env.context.get('force_report_rendering'):
+            _logger.info('caquita4: ')
             return self_sudo._render_qweb_html(res_ids, data=data)
 
         # As the assets are generated during the same transaction as the rendering of the
@@ -822,6 +824,7 @@ class IrActionsReport(models.Model):
             raise UserError(_("Unable to find Wkhtmltopdf on this system. The PDF can not be created."))
 
         html = self_sudo.with_context(context)._render_qweb_html(res_ids, data=data)[0]
+        _logger.info('caquita1: ' + str(html))
 
         # Ensure the current document is utf-8 encoded.
         html = html.decode('utf-8')
@@ -843,6 +846,7 @@ class IrActionsReport(models.Model):
         if res_ids:
             self._raise_on_unreadable_pdfs(save_in_attachment.values(), stream_record)
             _logger.info('The PDF report has been generated for model: %s, records %s.' % (self_sudo.model, str(res_ids)))
+            _logger.info('caquita3')
             return self_sudo._post_pdf(save_in_attachment, pdf_content=pdf_content, res_ids=html_ids), 'pdf'
         return pdf_content, 'pdf'
 
