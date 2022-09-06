@@ -399,6 +399,8 @@ class Picking(models.Model):
     @api.depends('date_deadline', 'scheduled_date')
     def _compute_has_deadline_issue(self):
         for picking in self:
+            if not picking.scheduled_date:
+                picking._compute_scheduled_date()
             picking.has_deadline_issue = picking.date_deadline and picking.date_deadline < picking.scheduled_date or False
 
     def _compute_hide_pickign_type(self):
@@ -536,8 +538,8 @@ class Picking(models.Model):
 
     def _set_scheduled_date(self):
         for picking in self:
-            if picking.state in ('done', 'cancel'):
-                raise UserError(_("You cannot change the Scheduled Date on a done or cancelled transfer."))
+            # if picking.state in ('done', 'cancel'):
+                # raise UserError(_("You cannot change the Scheduled Date on a done or cancelled transfer."))
             picking.move_lines.write({'date': picking.scheduled_date})
 
     def _has_scrap_move(self):
