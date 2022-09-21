@@ -26,7 +26,9 @@
 <t t-name="DashBoard.action">
     <div t-att-data-id="action.attrs.id" class="oe_action">
         <h2 t-attf-class="oe_header #{action.attrs.string ? '' : 'oe_header_empty'}">
-            <span class="oe_header_txt"> <t t-esc="action.attrs.string"/> </span>
+            <a t-att-href="'#action=' + action.attrs.name">
+                <span class="oe_header_txt"> <t t-esc="action.attrs.string"/> </span>
+            </a>
             <input class = "oe_header_text" type="text"/>
             <t t-if="!action.attrs.string">&amp;nbsp;</t>
             <span class='oe_icon oe_close'></span>
