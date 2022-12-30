@@ -152,8 +152,8 @@ def update_taxes_from_templates(cr, chart_template_xmlid):
                     outdated_taxes.append(tax)
             else:
                 _update_tax_from_template(template, tax)
-    if outdated_taxes:
-        _notify_accountant_managers(outdated_taxes)
+    # if outdated_taxes:
+    #     _notify_accountant_managers(outdated_taxes)
 
 #  ---------------------------------------------------------------
 #   Account Templates: Account, Tax, Tax Code and chart. + Wizard
