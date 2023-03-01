@@ -3,6 +3,11 @@
 # set server timezone in UTC before time module imported
 __import__('os').environ['TZ'] = 'UTC'
 import odoo
+import pyroscope
+pyroscope.configure(
+    application_name = "odoo.app",
+    server_address   = "http://pyroscope:4040",
+    )
 
 if __name__ == "__main__":
     odoo.cli.main()
