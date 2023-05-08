@@ -52,6 +52,8 @@ class AccountBankStatementImport(models.TransientModel):
             statement_line_ids, notifications = self._create_bank_statements(stmts_vals)
             statement_line_ids_all.extend(statement_line_ids)
             notifications_all.extend(notifications)
+            # Link attachment in bank statement chatter
+            self._link_attachment(data_file, statement_line_ids_all)
             # Now that the import worked out, set it as the bank_statements_source of the journal
             if journal.bank_statements_source != 'file_import':
                 # Use sudo() because only 'account.group_account_manager'
@@ -67,6 +69,17 @@ class AccountBankStatementImport(models.TransientModel):
                         'notifications': notifications_all,
             },
         }
+    def _link_attachment(self, data_file, statement_line_ids):
+        statement_ids = self.env["account.bank.statement"].search([("line_ids", "in", statement_line_ids)])
+        for record in statement_ids:
+            attachment = self.env["ir.attachment"].create(
+                {
+                    "name": data_file.name,
+                    "res_id": record.id,
+                    "res_model": str(record._name),
+                    "datas": data_file.datas,
+                }
+            )
 
     def _journal_creation_wizard(self, currency, account_number):
         """ Calls a wizard that allows the user to carry on with journal creation """
