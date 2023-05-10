@@ -33,4 +33,12 @@ class StockScrap(models.Model):
                 vals.update({'production_id': self.production_id.id})
             else:
                 vals.update({'raw_material_production_id': self.production_id.id})
+            move_raw_material = self.production_id.move_raw_ids.filtered(
+                lambda move: move.product_id.id == self.product_id.id)
+            vals['move_orig_ids'] = [(4, move_raw_material.id)]
+            move_line = move_raw_material.move_line_ids.filtered(
+                lambda line: line.product_id.id == self.product_id.id and line.lot_id.id == self.lot_id.id
+            )
+            if move_line:
+                move_line.product_uom_qty = move_line.product_uom_qty - self.scrap_qty
         return vals
