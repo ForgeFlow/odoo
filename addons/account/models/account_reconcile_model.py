@@ -701,6 +701,9 @@ class AccountReconcileModel(models.Model):
             return False
         return amount_percentage >= self.match_total_amount_param
 
+    def candidate_approves(self, residual_amount, line_residual, line_currency):
+        return float_is_zero(residual_amount - line_residual, precision_rounding=line_currency.rounding)
+
     def _apply_rules(self, st_lines, excluded_ids=None, partner_map=None):
         ''' Apply criteria to get candidates for all reconciliation models.
         :param st_lines:        Account.bank.statement.lines recordset.
@@ -768,7 +771,6 @@ class AccountReconcileModel(models.Model):
                 # No result found.
                 if not grouped_candidates.get(line.id) or not grouped_candidates[line.id].get(model.id):
                     continue
-
                 if model.rule_type == 'invoice_matching':
                     candidates = grouped_candidates[line.id][model.id]
 
@@ -810,7 +812,7 @@ class AccountReconcileModel(models.Model):
                     for c in available_candidates:
                         residual_amount = c['aml_currency_id'] and c['aml_amount_residual_currency'] or c['aml_amount_residual']
 
-                        if float_is_zero(residual_amount - line_residual, precision_rounding=line_currency.rounding):
+                        if self.candidate_approves(residual_amount, line_residual, line_currency):
                             available_candidates = [c]
                             break
 
