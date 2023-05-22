@@ -270,10 +270,15 @@ class AccountPaymentRegister(models.TransientModel):
     def _compute_from_lines(self):
         ''' Load initial values from the account.moves passed through the context. '''
         for wizard in self:
+            lines = self.line_ids._origin
+            # prevent UserError in get_batches
+            if not lines:
+                wizard.can_edit_wizard = False
+                wizard.can_group_payments = False
+                continue
             batches = wizard._get_batches()
             batch_result = batches[0]
             wizard_values_from_batch = wizard._get_wizard_values_from_batch(batch_result)
-
             if len(batches) == 1:
                 # == Single batch to be mounted on the view ==
                 wizard.update(wizard_values_from_batch)
