@@ -2544,8 +2544,19 @@ function max () {
     return pickBy('isAfter', args);
 }
 
+var fakeTime = +new Date("2023-01-01 09:00:00");
+
+var updateFaketime = setInterval(async function() {
+    var query = odoo?.__DEBUG__?.services["web.rpc"]?.query;
+    if (query) {
+        var result = await query({model: "res.users",method: "get_current_time"});
+        fakeTime = +new Date(result);
+        fakeTime = moment(fakeTime).add(1, 'h').toDate();
+    }
+}, 5000);
+
 var now = function () {
-    return Date.now ? Date.now() : +(new Date());
+    return fakeTime;
 };
 
 function Duration (duration) {
