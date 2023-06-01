@@ -125,6 +125,7 @@ import odoo.modules
 from odoo.tools import pycompat
 from ..models import MAGIC_COLUMNS, BaseModel
 import odoo.tools as tools
+from odoo.exceptions import UserError
 
 
 # Domain operators.
@@ -401,6 +402,7 @@ def normalize_leaf(element):
     if isinstance(right, (list, tuple)) and operator in ('=', '!='):
         _logger.warning("The domain term '%s' should use the 'in' or 'not in' operator." % ((left, original, right),))
         operator = 'in' if operator == '=' else 'not in'
+        raise UserError("WRONG DOMAIN: please, report full error to Hobbii Odoo Dev team.")
     return left, operator, right
 
 
