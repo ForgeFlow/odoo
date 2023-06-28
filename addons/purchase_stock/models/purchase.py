@@ -179,7 +179,7 @@ class PurchaseOrder(models.Model):
         filtered_documents = {}
         for (parent, responsible), rendering_context in documents.items():
             if parent._name == 'stock.picking':
-                if parent.state == 'cancel':
+                if parent.state in ['cancel', 'done']:
                     continue
             filtered_documents[(parent, responsible)] = rendering_context
         self.env['stock.picking']._log_activity(_render_note_exception_quantity_po, filtered_documents)
@@ -446,6 +446,9 @@ class PurchaseOrderLine(models.Model):
                 price_unit, order.company_id.currency_id, self.company_id, self.date_order or fields.Date.today(), round=False)
         return price_unit
 
+    def _get_move_dests(self):
+        return self.move_ids.move_dest_ids.filtered(lambda m: m.state != 'cancel' and not m.location_dest_id.usage == 'supplier')
+
     def _prepare_stock_moves(self, picking):
         """ Prepare the stock moves data for one order line. This function returns a list of
         dictionary ready to be used in stock.move's create()
@@ -460,7 +463,7 @@ class PurchaseOrderLine(models.Model):
 
         move_dests = self.move_dest_ids
         if not move_dests:
-            move_dests = self.move_ids.move_dest_ids.filtered(lambda m: m.state != 'cancel' and not m.location_dest_id.usage == 'supplier')
+            move_dests = self._get_move_dests()
 
         if not move_dests:
             qty_to_attach = 0
