@@ -727,6 +727,7 @@ class Picking(models.Model):
                         raise UserError(_('You need to supply a Lot/Serial number for product %s.') % product.display_name)
 
         if no_quantities_done:
+            print("PG CALL - Log odoo immediate transfer ask")
             view = self.env.ref('stock.view_immediate_transfer')
             wiz = self.env['stock.immediate.transfer'].create({'pick_ids': [(4, self.id)]})
             return {
