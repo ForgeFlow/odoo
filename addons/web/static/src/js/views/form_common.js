@@ -725,6 +725,12 @@ var AbstractField = FormWidget.extend(FieldInterface, {
      */
     _set_required: function() {
         this.$el.toggleClass('o_form_required', this.get("required"));
+        this.label = this.$el.prev()
+        if (this.label) {
+            if ("required" in this.modifiers) {
+                this.$label.toggleClass('o_aaron_label', this.get("required"))
+            }
+        }
     },
     set_value: function(value_) {
         this.set({'value': value_});
