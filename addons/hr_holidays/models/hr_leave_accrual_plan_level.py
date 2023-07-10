@@ -123,19 +123,6 @@ class AccrualPlanLevel(models.Model):
         string="At the end of the calendar year, unused accruals will be",
         default='postponed', required='True')
 
-    _sql_constraints = [
-        ('check_dates',
-         "CHECK( (frequency = 'daily') or"
-         "(week_day IS NOT NULL AND frequency = 'weekly') or "
-         "(first_day > 0 AND second_day > first_day AND first_day <= 31 AND second_day <= 31 AND frequency = 'bimonthly') or "
-         "(first_day > 0 AND first_day <= 31 AND frequency = 'monthly')or "
-         "(first_month_day > 0 AND first_month_day <= 31 AND second_month_day > 0 AND second_month_day <= 31 AND frequency = 'biyearly') or "
-         "(yearly_day > 0 AND yearly_day <= 31 AND frequency = 'yearly'))",
-         "The dates you've set up aren't correct. Please check them."),
-        ('start_count_check', "CHECK( start_count >= 0 )", "You can not start an accrual in the past."),
-        ('added_value_greater_than_zero', 'CHECK(added_value > 0)', 'You must give a rate greater than 0 in accrual plan levels.')
-    ]
-
     @api.depends('start_count', 'start_type')
     def _compute_sequence(self):
         # Not 100% accurate because of odd months/years, but good enough

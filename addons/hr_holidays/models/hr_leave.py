@@ -340,17 +340,6 @@ class HolidaysRequest(models.Model):
     is_hatched = fields.Boolean('Hatched', compute='_compute_is_hatched')
     is_striked = fields.Boolean('Striked', compute='_compute_is_hatched')
 
-    _sql_constraints = [
-        ('type_value',
-         "CHECK((holiday_type='employee' AND (employee_id IS NOT NULL OR multi_employee IS TRUE)) or "
-         "(holiday_type='company' AND mode_company_id IS NOT NULL) or "
-         "(holiday_type='category' AND category_id IS NOT NULL) or "
-         "(holiday_type='department' AND department_id IS NOT NULL) )",
-         "The employee, department, company or employee category of this request is missing. Please make sure that your user login is linked to an employee."),
-        ('date_check2', "CHECK ((date_from <= date_to))", "The start date must be anterior to the end date."),
-        ('duration_check', "CHECK ( number_of_days >= 0 )", "If you want to change the number of days you should use the 'period' mode"),
-    ]
-
     def _auto_init(self):
         res = super(HolidaysRequest, self)._auto_init()
         tools.create_index(self._cr, 'hr_leave_date_to_date_from_index',
@@ -671,22 +660,6 @@ class HolidaysRequest(models.Model):
         for holiday in self:
             holiday.attachment_ids = holiday.supported_attachment_ids
 
-    @api.constrains('date_from', 'date_to', 'employee_id')
-    def _check_date(self):
-        if self.env.context.get('leave_skip_date_check', False):
-            return
-        for holiday in self.filtered('employee_id'):
-            domain = [
-                ('date_from', '<', holiday.date_to),
-                ('date_to', '>', holiday.date_from),
-                ('employee_id', '=', holiday.employee_id.id),
-                ('id', '!=', holiday.id),
-                ('state', 'not in', ['cancel', 'refuse']),
-            ]
-            nholidays = self.search_count(domain)
-            if nholidays:
-                raise ValidationError(
-                    _('You can not set 2 time off that overlaps on the same day for the same employee.') + '\n- %s' % (holiday.display_name))
 
     @api.constrains('state', 'number_of_days', 'holiday_status_id')
     def _check_holidays(self):
@@ -714,14 +687,6 @@ class HolidaysRequest(models.Model):
                                             'Please also check the time off waiting for validation.')
                                         + _('\nThe employees that lack allocation days are:\n%s',
                                             (', '.join(unallocated_employees))))
-
-    @api.constrains('date_from', 'date_to', 'employee_id')
-    def _check_date_state(self):
-        if self.env.context.get('leave_skip_state_check'):
-            return
-        for holiday in self:
-            if holiday.state in ['cancel', 'refuse', 'validate1', 'validate']:
-                raise ValidationError(_("This modification is not allowed in the current state."))
 
     def _get_number_of_days(self, date_from, date_to, employee_id):
         """ Returns a float equals to the timedelta between two dates given as string."""
