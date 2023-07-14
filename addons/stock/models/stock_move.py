@@ -606,7 +606,7 @@ class StockMove(models.Model):
                 main_domain[move.id] = [('reservation_id', '=', False), ('qty', '>', 0)]
 
                 ancestors_list[move.id] = True if ancestors else False
-                if move.state == 'waiting' and not ancestors:
+                if move.state == 'waiting' and not ancestors and not move.force_mts:
                     # if the waiting move hasn't yet any ancestor (PO/MO not confirmed yet), don't find any quant available in stock
                     main_domain[move.id] += [('id', '=', False)]
                 elif ancestors:
