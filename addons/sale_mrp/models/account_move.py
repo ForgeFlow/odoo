@@ -21,8 +21,9 @@ class AccountMoveLine(models.Model):
             # is not found).
             # The fix is giving preference to the bom of the sale line
             boms = so_line.move_ids.filtered(lambda m: m.state != 'cancel').mapped('bom_line_id.bom_id').filtered(lambda b: b.type == 'phantom')
-            bom = (boms or self.env['mrp.bom']._bom_find(product=so_line.product_id, company_id=so_line.company_id.id, bom_type='phantom'))[:1]
-            if bom:
+            boms2 = (boms or self.env['mrp.bom']._bom_find(product=so_line.product_id, company_id=so_line.company_id.id, bom_type='phantom'))
+            if boms2:
+                bom = boms2[:1]
                 is_line_reversing = bool(self.move_id.reversed_entry_id)
                 qty_to_invoice = self.product_uom_id._compute_quantity(self.quantity, self.product_id.uom_id)
                 posted_invoice_lines = so_line.invoice_lines.filtered(lambda l: l.move_id.state == 'posted' and bool(l.move_id.reversed_entry_id) == is_line_reversing)
