@@ -4,6 +4,7 @@
 from odoo import api, fields, models, _
 from odoo.addons import decimal_precision as dp
 from odoo.exceptions import UserError
+from odoo.osv import expression
 from odoo.tools import pycompat,float_is_zero
 from odoo.tools.float_utils import float_round
 from datetime import datetime
@@ -204,7 +205,14 @@ class Product(models.Model):
             w_ids = set(Warehouse.browse(wids).mapped('view_location_id').ids)
             if location_ids:
                 l_ids = set(Location.browse(location_ids).ids)
-                location_ids = l_ids & w_ids
+                parents = Location.browse(w_ids).mapped("parent_path")
+                location_ids = {
+                    loc.id
+                    for loc in Location.browse(l_ids)
+                    if any(loc.parent_path.startswith(parent) for parent in parents)
+                }
+                if not location_ids:
+                    return [[expression.FALSE_LEAF]] * 3
             else:
                 location_ids = w_ids
         else:
