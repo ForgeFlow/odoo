@@ -121,7 +121,18 @@ class ReturnPicking(models.TransientModel):
                     move_dest_id = False
 
                 returned_lines += 1
-                return_line.move_id.copy({
+                move_copy_vals = self._prepare_move_copy_vals(return_line, new_qty, new_picking, picking_type_id, picking, move_dest_id)
+                return_line.move_id.copy(move_copy_vals)
+
+        if not returned_lines:
+            raise UserError(_("Please specify at least one non-zero quantity."))
+
+        new_picking.action_confirm()
+        new_picking.action_assign()
+        return new_picking.id, picking_type_id
+
+    def _prepare_move_copy_vals(self, return_line, new_qty, new_picking, picking_type_id, picking, move_dest_id):
+        return {
                     'product_id': return_line.product_id.id,
                     'product_uom_qty': new_qty,
                     'picking_id': new_picking.id,
@@ -133,14 +144,7 @@ class ReturnPicking(models.TransientModel):
                     'origin_returned_move_id': return_line.move_id.id,
                     'procure_method': 'make_to_stock',
                     'move_dest_id': move_dest_id,
-                })
-
-        if not returned_lines:
-            raise UserError(_("Please specify at least one non-zero quantity."))
-
-        new_picking.action_confirm()
-        new_picking.action_assign()
-        return new_picking.id, picking_type_id
+                }
 
     @api.multi
     def create_returns(self):
