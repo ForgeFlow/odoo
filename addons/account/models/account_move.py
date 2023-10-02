@@ -1060,7 +1060,7 @@ class AccountMove(models.Model):
             else:
                 return [(fields.Date.to_string(date), total_balance, total_amount_currency)]
 
-        def _compute_diff_payment_terms_lines(self, existing_terms_lines, account, to_compute):
+        def _compute_diff_payment_terms_lines(self, existing_terms_lines, account, to_compute, analytic_account=False):
             ''' Process the result of the '_compute_payment_terms' method and creates/updates corresponding invoice lines.
             :param self:                    The current account.move record.
             :param existing_terms_lines:    The current payment terms lines.
@@ -1097,6 +1097,7 @@ class AccountMove(models.Model):
                         'credit': balance > 0.0 and balance or 0.0,
                         'quantity': 1.0,
                         'amount_currency': -amount_currency,
+                        'analytic_account_id': analytic_account.id if analytic_account else False,
                         'date_maturity': date_maturity,
                         'move_id': self.id,
                         'currency_id': self.currency_id.id,
@@ -1109,23 +1110,57 @@ class AccountMove(models.Model):
                     candidate.update(candidate._get_fields_onchange_balance(force_computation=True))
             return new_terms_lines
 
-        existing_terms_lines = self.line_ids.filtered(lambda line: line.account_id.user_type_id.type in ('receivable', 'payable'))
-        others_lines = self.line_ids.filtered(lambda line: line.account_id.user_type_id.type not in ('receivable', 'payable'))
-        company_currency_id = (self.company_id or self.env.company).currency_id
-        total_balance = sum(others_lines.mapped(lambda l: company_currency_id.round(l.balance)))
-        total_amount_currency = sum(others_lines.mapped('amount_currency'))
+        analytic_model = self.env["account.analytic.account"]
+        new_terms_lines = False
+        if self:
+            all_analytic_ids = self.line_ids.mapped("analytic_account_id").ids            
+            if not all_analytic_ids:
+                # super code directly
+                all_analytic_accounts = []
+                existing_terms_lines = self.line_ids.filtered(lambda line: line.account_id.user_type_id.type in ('receivable', 'payable'))
+                others_lines = self.line_ids.filtered(lambda line: line.account_id.user_type_id.type not in ('receivable', 'payable'))
+                company_currency_id = (self.company_id or self.env.company).currency_id
+                total_balance = sum(others_lines.mapped(lambda l: company_currency_id.round(l.balance)))
+                total_amount_currency = sum(others_lines.mapped('amount_currency'))
 
-        if not others_lines:
-            self.line_ids -= existing_terms_lines
-            return
+                if not others_lines:
+                    self.line_ids -= existing_terms_lines
+                    return
 
-        computation_date = _get_payment_terms_computation_date(self)
-        account = _get_payment_terms_account(self, existing_terms_lines)
-        to_compute = _compute_payment_terms(self, computation_date, total_balance, total_amount_currency)
-        new_terms_lines = _compute_diff_payment_terms_lines(self, existing_terms_lines, account, to_compute)
+                computation_date = _get_payment_terms_computation_date(self)
+                account = _get_payment_terms_account(self, existing_terms_lines)
+                to_compute = _compute_payment_terms(self, computation_date, total_balance, total_amount_currency)
+                new_terms_lines = _compute_diff_payment_terms_lines(self, existing_terms_lines, account, to_compute)
+                self.line_ids -= existing_terms_lines - new_terms_lines
+            else:
+                all_analytic_accounts = [analytic_model.browse(aid) for aid in all_analytic_ids]
+                all_analytic_accounts.append(analytic_model)
+        else:
+            all_analytic_accounts.append(analytic_model)
+    
+        for aa in all_analytic_accounts:
+            anal_lines = self.line_ids.filtered(lambda line: line.analytic_account_id == aa)            
+            existing_terms_lines = anal_lines.filtered(lambda line: line.account_id.user_type_id.type in ('receivable', 'payable'))
+            others_lines = self.line_ids.filtered(lambda line: line.account_id.user_type_id.type not in ('receivable', 'payable') and line.analytic_account_id == aa)
+            company_currency_id = (self.company_id or self.env.company).currency_id
+            total_balance = sum(others_lines.mapped(lambda l: company_currency_id.round(l.balance)))
+            total_amount_currency = sum(others_lines.mapped('amount_currency'))
 
-        # Remove old terms lines that are no longer needed.
-        self.line_ids -= existing_terms_lines - new_terms_lines
+            if not others_lines:
+                self.line_ids -= existing_terms_lines
+                return
+
+            computation_date = _get_payment_terms_computation_date(self)
+            account = _get_payment_terms_account(self, existing_terms_lines)
+            to_compute = _compute_payment_terms(self, computation_date, total_balance, total_amount_currency)
+
+            if new_terms_lines:
+                new_terms_lines += _compute_diff_payment_terms_lines(self, existing_terms_lines, account, to_compute, aa)
+            else:
+                new_terms_lines = _compute_diff_payment_terms_lines(self, existing_terms_lines, account, to_compute, aa)
+
+            # Remove old terms lines that are no longer needed.
+            self.line_ids -= existing_terms_lines - new_terms_lines
 
         if new_terms_lines:
             self.payment_reference = new_terms_lines[-1].name or ''
