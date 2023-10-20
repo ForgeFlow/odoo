@@ -308,7 +308,7 @@ class ResPartner(models.Model):
         if individual:
             return True
         # Check the vat number
-        check_func = stdnum.util.get_cc_module('hu', 'vat').is_valid(vat)
+        check_func = getattr(stdnum.util.get_cc_module('hu', 'vat'), 'is_valid', None)
         if check_func is not None:
             return check_func(vat)
 
