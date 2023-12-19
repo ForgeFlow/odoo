@@ -1511,7 +1511,8 @@ class AccountMove(models.Model):
 
                 # We only set 'reversed' state in cas of 1 to 1 full reconciliation with a reverse entry; otherwise, we use the regular 'paid' state
                 reverse_moves_full_recs = reverse_moves.mapped('line_ids.full_reconcile_id')
-                if reverse_moves_full_recs.mapped('reconciled_line_ids.move_id').filtered(lambda x: x not in (reverse_moves + reverse_moves_full_recs.mapped('exchange_move_id'))) == move:
+                full_exchange_move = reverse_moves_full_recs.reconciled_line_ids.mapped("matched_debit_ids.exchange_move_id") | reverse_moves_full_recs.reconciled_line_ids.mapped("matched_credit_ids.exchange_move_id")
+                if reverse_moves_full_recs.mapped('reconciled_line_ids.move_id').filtered(lambda x: x not in (reverse_moves + full_exchange_move)) == move:
                     new_pmt_state = 'reversed'
 
             move.payment_state = new_pmt_state
@@ -5865,10 +5866,10 @@ class AccountMoveLine(models.Model):
 
         # ==== Create entries for cash basis taxes ====
         # TODO: CHECK
-        # is_cash_basis_needed = account.company_id.tax_exigibility and account.user_type_id.name in ('asset_receivable', 'liability_payable')
-        # if is_cash_basis_needed and not self._context.get('move_reverse_cancel') and not self._context.get('no_cash_basis'):
-        #     tax_cash_basis_moves = partials._create_tax_cash_basis_moves()
-        #     results['tax_cash_basis_moves'] = tax_cash_basis_moves
+        is_cash_basis_needed = account.user_type_id.type in ('receivable', 'payable')
+        if is_cash_basis_needed and not self._context.get('move_reverse_cancel'):
+            tax_cash_basis_moves = partials._create_tax_cash_basis_moves()
+            results['tax_cash_basis_moves'] = tax_cash_basis_moves
 
         # ==== Check if a full reconcile is needed ====
 
