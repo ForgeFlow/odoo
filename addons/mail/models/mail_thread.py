@@ -2310,6 +2310,7 @@ class MailThread(models.AbstractModel):
                             existing_notifications.write({
                                 'notification_status': 'ready',
                                 'mail_mail_id': email.id,
+                                "is_read": False,
                             })
                     notif_create_values += [{
                         'mail_message_id': message.id,
