@@ -1577,9 +1577,11 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         :raise AccessError: * if user tries to bypass access rules for read on the requested object.
         """
         code = uuid.uuid4()
-        print("begin_search", self._name, args, limit, code)
+        if self._name != 'bus.bus':
+            print("begin_search", self._name, args, limit, code)
         res = self._search(args, offset=offset, limit=limit, order=order, count=count)
-        print("end_search", self._name, code)
+        if self._name != 'bus.bus':
+            print("end_search", self._name, code)
         return res if count else self.browse(res)
 
     #
