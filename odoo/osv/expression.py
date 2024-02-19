@@ -124,6 +124,7 @@ from datetime import date, datetime, time
 import odoo.modules
 from odoo.tools import pycompat
 from ..models import MAGIC_COLUMNS, BaseModel
+from odoo.exceptions import UserError
 import odoo.tools as tools
 
 
@@ -399,6 +400,7 @@ def normalize_leaf(element):
         _logger.warning("The domain term '%s' should use the '=' or '!=' operator." % ((left, original, right),))
         operator = '=' if operator == 'in' else '!='
     if isinstance(right, (list, tuple)) and operator in ('=', '!='):
+        raise UserError("Please, notify Miquel Raïch (@MiquelRForgeFlow) of this shocking error")
         _logger.warning("The domain term '%s' should use the 'in' or 'not in' operator." % ((left, original, right),))
         operator = 'in' if operator == '=' else 'not in'
     return left, operator, right
