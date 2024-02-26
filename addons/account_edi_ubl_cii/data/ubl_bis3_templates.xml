@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="ubl_bis3_InvoiceType" inherit_id="account_edi_ubl_cii.ubl_20_InvoiceType" primary="True">
+        <xpath expr="(//*[local-name()='t'][@t-as='note'])[1]" position="replace">
+            <cbc:Note
+                xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+                xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+                t-out="('\n\n'.join(vals.get('note_vals', [])))"/>
+        </xpath>
+    </template>
+
+</odoo>
