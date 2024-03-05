@@ -621,7 +621,7 @@ class SaleOrder(models.Model):
                 invoices[group_key].reference = sale_orders.reference
 
         if not invoices:
-            raise UserError(_('There is no invoiceable line. If a product has a Delivered quantities invoicing policy, please make sure that a quantity has been delivered.'))
+            raise UserError(_('There is no invoiceable line in %s. If a product has a Delivered quantities invoicing policy, please make sure that a quantity has been delivered.') % ",".join([x.name for x in self]))
 
         self._finalize_invoices(invoices, references)
         return [inv.id for inv in invoices.values()]
