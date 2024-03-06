@@ -28,6 +28,9 @@ function factory(dependencies) {
             if ('notification_status' in data) {
                 data2.notification_status = data.notification_status;
             }
+            if ('is_read' in data) {
+                data2.is_read = data.is_read;
+            }
             if ('notification_type' in data) {
                 data2.notification_type = data.notification_type;
             }
@@ -55,6 +58,7 @@ function factory(dependencies) {
         message: many2one('mail.message', {
             inverse: 'notifications',
         }),
+        is_read: attr(),
         notification_status: attr(),
         notification_type: attr(),
         partner: many2one('mail.partner'),

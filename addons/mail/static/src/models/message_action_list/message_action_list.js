@@ -70,6 +70,10 @@ function factory(dependencies) {
             this.message.markAsRead();
         }
 
+        onClickMarkAsUnRead(ev) {
+            this.message.markAsUnRead();
+        }
+
         /**
          * @private
          * @param {Event} ev

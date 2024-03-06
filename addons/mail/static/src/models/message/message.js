@@ -170,6 +170,13 @@ function factory(dependencies) {
             });
         }
 
+        static async markAsUnread(messages) {
+            await this.env.services.rpc({
+                model: 'mail.message',
+                method: 'new_set_message_unread',
+                args: [messages.map(message => message.id)]
+            });
+        }
         /**
          * Performs the given `route` RPC to fetch messages.
          *
@@ -240,7 +247,13 @@ function factory(dependencies) {
                 args: [[this.id]]
             }));
         }
-
+        async markAsUnRead() {
+            await this.async(() => this.env.services.rpc({
+                model: 'mail.message',
+                method: 'new_set_message_unread',
+                args: [[this.id]]
+            }));
+        }
         /**
          * Opens the view that allows to resend the message in case of failure.
          */
