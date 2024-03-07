@@ -86,6 +86,10 @@ function factory(dependencies) {
                             return this._handleNotificationMessageDelete(message.payload);
                         case 'mail.message/inbox':
                             return this._handleNotificationNeedaction(message.payload);
+                        case 'mail.message/mark_as_cancel':
+                            return this._handleMarkACancel(message.payload);
+                        case 'mail.message/mark_as_retry':
+                            return this._handleMarkAsRetry(message.payload);
                         case 'mail.message/mark_as_read':
                             return this._handleNotificationPartnerMarkAsRead(message.payload);
                         case 'mail.message/notification_update':
@@ -587,6 +591,79 @@ function factory(dependencies) {
             }
         }
 
+<<<<<<< HEAD
+=======
+        _handleMarkACancel({ message_ids = [] }) {
+            for (const message_id of message_ids) {
+                // I <3 hacks
+                const message = this.messaging.models['mail.message'].findFromIdentifyingData({ id: message_id });
+                if (!message) {
+                    continue;
+                }
+                // move messages from Inbox to history
+                message.update({
+                    mail_status: 'cancel',
+                });
+            }
+            const inbox = this.messaging.inbox;
+            inbox.cache.update({ hasToLoadMessages: true });
+        }
+
+        _handleMarkAsRetry({ message_ids = [] }) {
+            for (const message_id of message_ids) {
+                // I <3 hacks
+                const message = this.messaging.models['mail.message'].findFromIdentifyingData({ id: message_id });
+                if (!message) {
+                    continue;
+                }
+                // move messages from Inbox to history
+                message.update({
+                    mail_status: 'outgoing',
+                });
+            }
+            const inbox = this.messaging.inbox;
+            inbox.cache.update({ hasToLoadMessages: true });
+        }
+
+        _handleNotificationPartnerMarkAsUnRead({ message_ids = [], needaction_inbox_counter }) {
+            for (const message_id of message_ids) {
+                // We need to ignore all not yet known messages because we don't want them
+                // to be shown partially as they would be linked directly to cache.
+                // Furthermore, server should not send back all message_ids marked as read
+                // but something like last read message_id or something like that.
+                // (just imagine you mark 1000 messages as read ... )
+                const message = this.messaging.models['mail.message'].findFromIdentifyingData({ id: message_id });
+                if (!message) {
+                    continue;
+                }
+                // update thread counter
+                const originThread = message.originThread;
+                if (originThread && !message.isNeedaction) {
+                    originThread.update({ message_needaction_counter: increment() });
+                }
+                // move messages from Inbox to history
+                message.update({
+                    isHistory: false,
+                    isNeedaction: true,
+                });
+            }
+            const inbox = this.messaging.inbox;
+            if (needaction_inbox_counter !== undefined) {
+                inbox.update({ counter: needaction_inbox_counter });
+            } else {
+                // kept for compatibility in stable
+                inbox.update({ counter: increment(message_ids.length) });
+            }
+            if (inbox.counter > inbox.cache.fetchedMessages.length) {
+                // Force refresh Inbox because depending on what was marked as
+                // read the cache might become empty even though there are more
+                // messages on the server.
+                inbox.cache.update({ hasToLoadMessages: true });
+            }
+        }
+
+
+>>>>>>> b62ceea736 ([IMP] mail: added bus hook methods when marking a message as retry or cancelled)
         /**
          * @private
          * @param {Object} param0
