@@ -86,6 +86,10 @@ function factory(dependencies) {
                             return this._handleNotificationMessageDelete(message.payload);
                         case 'mail.message/inbox':
                             return this._handleNotificationNeedaction(message.payload);
+                        case 'mail.message/mark_as_cancel':
+                            return this._handleMarkACancel(message.payload);
+                        case 'mail.message/mark_as_retry':
+                            return this._handleMarkAsRetry(message.payload);
                         case 'mail.message/mark_as_unread':
                             return this._handleNotificationPartnerMarkAsUnRead(message.payload);
                         case 'mail.message/mark_as_read':
@@ -589,6 +593,37 @@ function factory(dependencies) {
             }
         }
 
+        _handleMarkACancel({ message_ids = [] }) {
+            for (const message_id of message_ids) {
+                // I <3 hacks
+                const message = this.messaging.models['mail.message'].findFromIdentifyingData({ id: message_id });
+                if (!message) {
+                    continue;
+                }
+                // move messages from Inbox to history
+                message.update({
+                    mail_status: 'cancel',
+                });
+            }
+            const inbox = this.messaging.inbox;
+            inbox.cache.update({ hasToLoadMessages: true });
+        }
+
+        _handleMarkAsRetry({ message_ids = [] }) {
+            for (const message_id of message_ids) {
+                // I <3 hacks
+                const message = this.messaging.models['mail.message'].findFromIdentifyingData({ id: message_id });
+                if (!message) {
+                    continue;
+                }
+                // move messages from Inbox to history
+                message.update({
+                    mail_status: 'outgoing',
+                });
+            }
+            const inbox = this.messaging.inbox;
+            inbox.cache.update({ hasToLoadMessages: true });
+        }
 
         _handleNotificationPartnerMarkAsUnRead({ message_ids = [], needaction_inbox_counter }) {
             for (const message_id of message_ids) {
