@@ -360,7 +360,11 @@ class Picking(models.Model):
         elif all(move.state == 'cancel' for move in self.move_lines):
             self.state = 'cancel'
         elif all(move.state in ['cancel', 'done'] for move in self.move_lines):
-            self.state = 'done'
+            if (all(move.scrapped if move.state == 'done' else True for move in self.move_lines)
+                    and any(move.state == 'cancel' and not move.scrapped for move in self.move_lines)):
+                self.state = 'cancel'
+            else:
+                self.state = 'done'
         else:
             relevant_move_state = self.move_lines._get_relevant_state_among_moves()
             if relevant_move_state == 'partially_available':
