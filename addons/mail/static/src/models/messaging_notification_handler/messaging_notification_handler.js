@@ -602,7 +602,7 @@ function factory(dependencies) {
                 }
                 // move messages from Inbox to history
                 message.update({
-                    mail_status: 'cancel',
+                    mail_status: 'canceled',
                 });
             }
             const inbox = this.messaging.inbox;
@@ -618,7 +618,7 @@ function factory(dependencies) {
                 }
                 // move messages from Inbox to history
                 message.update({
-                    mail_status: 'outgoing',
+                    mail_status: 'ready',
                 });
             }
             const inbox = this.messaging.inbox;
