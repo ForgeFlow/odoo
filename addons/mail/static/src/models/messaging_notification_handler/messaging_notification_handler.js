@@ -90,6 +90,8 @@ function factory(dependencies) {
                             return this._handleMarkACancel(message.payload);
                         case 'mail.message/mark_as_retry':
                             return this._handleMarkAsRetry(message.payload);
+                        case 'mail.message/mark_as_failed':
+                            return this._handleMarkAsFailed(message.payload);
                         case 'mail.message/mark_as_unread':
                             return this._handleNotificationPartnerMarkAsUnRead(message.payload);
                         case 'mail.message/mark_as_read':
@@ -619,6 +621,21 @@ function factory(dependencies) {
                 // move messages from Inbox to history
                 message.update({
                     mail_status: 'ready',
+                });
+            }
+            const inbox = this.messaging.inbox;
+            inbox.cache.update({ hasToLoadMessages: true });
+        }
+        _handleMarkAsFailed({ message_ids = [] }) {
+            for (const message_id of message_ids) {
+                // I <3 hacks
+                const message = this.messaging.models['mail.message'].findFromIdentifyingData({ id: message_id });
+                if (!message) {
+                    continue;
+                }
+                // move messages from Inbox to history
+                message.update({
+                    mail_status: 'exception',
                 });
             }
             const inbox = this.messaging.inbox;

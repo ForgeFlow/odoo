@@ -364,6 +364,17 @@ class MailMail(models.Model):
                 if smtp_session:
                     smtp_session.quit()
 
+    def mark_as_failed(self):
+        # method to sent the failure to the bus
+        partner = self.env.user.partner_id
+        self.env["bus.bus"]._sendone(
+                    partner,
+                    "mail.message/mark_as_failed",
+                    {
+                    "message_ids": self.ids,
+                    },
+                )
+
     def _send(self, auto_commit=False, raise_exception=False, smtp_session=None):
         IrMailServer = self.env['ir.mail_server']
         IrAttachment = self.env['ir.attachment']
@@ -480,6 +491,7 @@ class MailMail(models.Model):
                             _logger.info("Ignoring invalid recipients for mail.mail %s: %s",
                                          mail.message_id, email.get('email_to'))
                         else:
+                            mail.mark_as_failed()
                             raise
                 if res:  # mail has been sent at least once, no major exception occurred
                     mail.write({'state': 'sent', 'message_id': res, 'failure_reason': False})
@@ -494,6 +506,7 @@ class MailMail(models.Model):
                     'MemoryError while processing mail with ID %r and Msg-Id %r. Consider raising the --limit-memory-hard startup option',
                     mail.id, mail.message_id)
                 # mail status will stay on ongoing since transaction will be rollback
+                mail.mark_as_failed()
                 raise
             except (psycopg2.Error, smtplib.SMTPServerDisconnected):
                 # If an error with the database or SMTP session occurs, chances are that the cursor
@@ -501,8 +514,10 @@ class MailMail(models.Model):
                 _logger.exception(
                     'Exception while processing mail with ID %r and Msg-Id %r.',
                     mail.id, mail.message_id)
+                mail.mark_as_failed()
                 raise
             except Exception as e:
+                mail.mark_as_failed()
                 failure_reason = tools.ustr(e)
                 _logger.exception('failed sending mail (id: %s) due to %s', mail.id, failure_reason)
                 mail.write({'state': 'exception', 'failure_reason': failure_reason})
