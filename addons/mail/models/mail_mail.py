@@ -344,6 +344,7 @@ class MailMail(models.Model):
             try:
                 smtp_session = self.env['ir.mail_server'].connect(mail_server_id=mail_server_id, smtp_from=smtp_from)
             except Exception as exc:
+                self.mark_as_failed()
                 if raise_exception:
                     # To be consistent and backward compatible with mail_mail.send() raised
                     # exceptions, it is encapsulated into an Odoo MailDeliveryException
