@@ -194,16 +194,19 @@ class AccountReconciliation(models.AbstractModel):
             :param st_line_id: ids of the bank statement
         """
         bank_statements = self.env['account.bank.statement'].browse(bank_statement_ids)
+        journal_id = bank_statements and bank_statements[0].journal_id.id or False,
 
         query = '''
              SELECT line.id
              FROM account_bank_statement_line line
-             WHERE account_id IS NULL
+             JOIN account_bank_statement st ON line.statement_id = st.id
+             WHERE line.account_id IS NULL
              AND line.amount != 0.0
-             AND line.statement_id IN %s
+             AND st.journal_id = %s
+             AND st.state = 'open'
              AND NOT EXISTS (SELECT 1 from account_move_line aml WHERE aml.statement_line_id = line.id)
         '''
-        self.env.cr.execute(query, [tuple(bank_statements.ids)])
+        self.env.cr.execute(query, [journal_id])
 
         bank_statement_lines = self.env['account.bank.statement.line'].browse([line.get('id') for line in self.env.cr.dictfetchall()])
 
@@ -213,7 +216,7 @@ class AccountReconciliation(models.AbstractModel):
 
         results.update({
             'statement_name': len(bank_statements_left) == 1 and bank_statements_left.name or False,
-            'journal_id': bank_statements and bank_statements[0].journal_id.id or False,
+            'journal_id': journal_id,
             'notifications': []
         })
 
