@@ -261,7 +261,7 @@ class Inventory(models.Model):
             args += (self.lot_id.id,)
         #case 3: Filter on One product
         if self.product_id:
-            domain += ' AND product_id = %s'
+            domain += ' AND sq.product_id = %s'
             args += (self.product_id.id,)
             products_to_filter |= self.product_id
         #case 4: Filter on A Pack
@@ -271,16 +271,16 @@ class Inventory(models.Model):
         #case 5: Filter on One product category + Exahausted Products
         if self.category_id:
             categ_products = Product.search([('categ_id', 'child_of', self.category_id.id)])
-            domain += ' AND product_id = ANY (%s)'
+            domain += ' AND sq.product_id = ANY (%s)'
             args += (categ_products.ids,)
             products_to_filter |= categ_products
 
-        self.env.cr.execute("""SELECT product_id, sum(quantity) as product_qty, location_id, lot_id as prod_lot_id, package_id, owner_id as partner_id
-            FROM stock_quant
-            LEFT JOIN product_product
-            ON product_product.id = stock_quant.product_id
+        self.env.cr.execute("""SELECT sq.product_id, sum(quantity) as product_qty, location_id, lot_id as prod_lot_id, package_id, owner_id as partner_id
+            FROM stock_quant sq
+            LEFT JOIN product_product pp
+            ON pp.id = sq.product_id
             WHERE %s
-            GROUP BY product_id, location_id, lot_id, package_id, partner_id """ % domain, args)
+            GROUP BY sq.product_id, location_id, lot_id, package_id, partner_id """ % domain, args)
 
         for product_data in self.env.cr.dictfetchall():
             # replace the None the dictionary by False, because falsy values are tested later on
