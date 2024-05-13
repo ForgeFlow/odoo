@@ -372,7 +372,7 @@ class MailMail(models.Model):
                     partner,
                     "mail.message/mark_as_failed",
                     {
-                    "message_ids": self.ids,
+                    "message_ids": self.mail_message_id.ids,
                     },
                 )
 
