@@ -343,6 +343,7 @@ class MailMail(models.Model):
             smtp_session = None
             try:
                 smtp_session = self.env['ir.mail_server'].connect(mail_server_id=mail_server_id, smtp_from=smtp_from)
+                # self.write({"lol": "lol"})
             except Exception as exc:
                 self.mark_as_failed()
                 if raise_exception:
@@ -371,6 +372,17 @@ class MailMail(models.Model):
         self.env["bus.bus"]._sendone(
                     partner,
                     "mail.message/mark_as_failed",
+                    {
+                    "message_ids": self.mail_message_id.ids,
+                    },
+                )
+
+    def mark_as_sent(self):
+        # method to sent the failure to the bus
+        partner = self.env.user.partner_id
+        self.env["bus.bus"]._sendone(
+                    partner,
+                    "mail.message/mark_as_sent",
                     {
                     "message_ids": self.mail_message_id.ids,
                     },
@@ -534,4 +546,5 @@ class MailMail(models.Model):
 
             if auto_commit is True:
                 self._cr.commit()
+        mail.mark_as_sent()
         return True
