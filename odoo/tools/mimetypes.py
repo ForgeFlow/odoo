@@ -206,4 +206,4 @@ def get_extension(filename):
     :returns: detected extension or ``
     """
     ext = '.' in filename and filename.split('.')[-1]
-    return ext and len(ext) <= 10 and ext.isalnum() and '.' + ext.lower() or ''
+    return ext and len(ext) <= 12 and ext.isalnum() and '.' + ext.lower() or ''
