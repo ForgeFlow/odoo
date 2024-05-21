@@ -715,8 +715,12 @@ class ProductTemplate(models.Model):
         if self.type == 'consu' and self.tracking != 'none':
             self.tracking = 'none'
 
-        # Return a warning when trying to change the product type
-        if self.ids and self.product_variant_ids.ids and self.env['stock.move.line'].sudo().search_count([
+        valuation_layers_exist = self.env['stock.valuation.layer'].search_count([
+            ('product_id', 'in', self.product_variant_ids.ids)
+        ]) > 0
+        # FIXME to fix in v17.0
+        # Added valuation_layers check
+        if not valuation_layers_exist and self.ids and self.product_variant_ids.ids and self.env['stock.move.line'].sudo().search_count([
             ('product_id', 'in', self.product_variant_ids.ids), ('state', '!=', 'cancel')
         ]):
             res['warning'] = {
@@ -739,18 +743,24 @@ class ProductTemplate(models.Model):
         if 'type' in vals and vals['type'] != 'product' and sum(self.mapped('nbr_reordering_rules')) != 0:
             raise UserError(_('You still have some active reordering rules on this product. Please archive or delete them first.'))
         if any('type' in vals and vals['type'] != prod_tmpl.type for prod_tmpl in self):
-            existing_done_move_lines = self.env['stock.move.line'].sudo().search([
-                ('product_id', 'in', self.mapped('product_variant_ids').ids),
-                ('state', '=', 'done'),
+            # FIXME to fix in v17.0
+            # Added valuation_layers check
+            valuation_layers = self.env['stock.valuation.layer'].search([
+                ('product_id', 'in', self.mapped('product_variant_ids').ids)
             ], limit=1)
-            if existing_done_move_lines:
-                raise UserError(_("You can not change the type of a product that was already used."))
-            existing_reserved_move_lines = self.env['stock.move.line'].search([
-                ('product_id', 'in', self.mapped('product_variant_ids').ids),
-                ('state', 'in', ['partially_available', 'assigned']),
-            ])
-            if existing_reserved_move_lines:
-                raise UserError(_("You can not change the type of a product that is currently reserved on a stock move. If you need to change the type, you should first unreserve the stock move."))
+            if not valuation_layers:
+                existing_done_move_lines = self.env['stock.move.line'].sudo().search([
+                    ('product_id', 'in', self.mapped('product_variant_ids').ids),
+                    ('state', '=', 'done'),
+                ], limit=1)
+                if existing_done_move_lines:
+                    raise UserError(_("You can not change the type of a product that was already used."))
+                existing_reserved_move_lines = self.env['stock.move.line'].search([
+                    ('product_id', 'in', self.mapped('product_variant_ids').ids),
+                    ('state', 'in', ['partially_available', 'assigned']),
+                ])
+                if existing_reserved_move_lines:
+                    raise UserError(_("You can not change the type of a product that is currently reserved on a stock move. If you need to change the type, you should first unreserve the stock move."))
         if 'type' in vals and vals['type'] != 'product' and any(p.type == 'product' and not float_is_zero(p.qty_available, precision_rounding=p.uom_id.rounding) for p in self):
             raise UserError(_("Available quantity should be set to zero before changing type"))
         return super(ProductTemplate, self).write(vals)
