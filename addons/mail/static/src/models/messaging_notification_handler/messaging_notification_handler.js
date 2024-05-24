@@ -88,8 +88,6 @@ function factory(dependencies) {
                             return this._handleNotificationNeedaction(message.payload);
                         case 'mail.message/mark_as_cancel':
                             return this._handleMarkACancel(message.payload);
-                        case 'mail.message/mark_as_retry':
-                            return this._handleMarkAsRetry(message.payload);
                         case 'mail.message/mark_as_failed':
                             return this._handleMarkAsFailed(message.payload);
                         case 'mail.message/mark_as_sent':
@@ -613,21 +611,6 @@ function factory(dependencies) {
             inbox.cache.update({ hasToLoadMessages: true });
         }
 
-        _handleMarkAsRetry({ message_ids = [] }) {
-            for (const message_id of message_ids) {
-                // I <3 hacks
-                const message = this.messaging.models['mail.message'].findFromIdentifyingData({ id: message_id });
-                if (!message) {
-                    continue;
-                }
-                // move messages from Inbox to history
-                message.update({
-                    mail_status: 'ready',
-                });
-            }
-            const inbox = this.messaging.inbox;
-            inbox.cache.update({ hasToLoadMessages: true });
-        }
         _handleMarkAsFailed({ message_ids = [] }) {
             for (const message_id of message_ids) {
                 // I <3 hacks

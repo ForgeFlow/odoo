@@ -546,5 +546,6 @@ class MailMail(models.Model):
 
             if auto_commit is True:
                 self._cr.commit()
-        mail.mark_as_sent()
+        if mail.state == "sent":
+            mail.mark_as_sent()
         return True
