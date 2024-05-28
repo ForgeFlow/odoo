@@ -368,14 +368,20 @@ class MailMail(models.Model):
 
     def mark_as_failed(self):
         # method to sent the failure to the bus
-        partner = self.env.user.partner_id
-        self.env["bus.bus"]._sendone(
-                    partner,
-                    "mail.message/mark_as_failed",
-                    {
+        partners = self.env.user.partner_id
+        if self and self[0] and self[0].model:
+            team = (
+                self.env["mail.activity.team"]
+                .sudo()
+                .search([("res_model_ids.model", "=", self[0].model)])
+            )
+
+            partners = (team.member_ids.partner_id | self.env.user.partner_id)
+        message_data = {
                     "message_ids": self.mail_message_id.ids,
-                    },
-                )
+                    }
+        bus_notifs = [(partner, 'mail.message/mark_as_failed', message_data) for partner in partners]
+        self.env['bus.bus']._sendmany(bus_notifs)
 
     def mark_as_sent(self):
         # method to sent the failure to the bus
