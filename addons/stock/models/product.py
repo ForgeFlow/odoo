@@ -734,12 +734,6 @@ class ProductTemplate(models.Model):
         return res
 
     def write(self, vals):
-        if 'uom_id' in vals:
-            new_uom = self.env['uom.uom'].browse(vals['uom_id'])
-            updated = self.filtered(lambda template: template.uom_id != new_uom)
-            done_moves = self.env['stock.move'].search([('product_id', 'in', updated.with_context(active_test=False).mapped('product_variant_ids').ids)], limit=1)
-            if done_moves:
-                raise UserError(_("You cannot change the unit of measure as there are already stock moves for this product. If you want to change the unit of measure, you should rather archive this product and create a new one."))
         if 'type' in vals and vals['type'] != 'product' and sum(self.mapped('nbr_reordering_rules')) != 0:
             raise UserError(_('You still have some active reordering rules on this product. Please archive or delete them first.'))
         if any('type' in vals and vals['type'] != prod_tmpl.type for prod_tmpl in self):
