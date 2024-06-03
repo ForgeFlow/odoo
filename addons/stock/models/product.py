@@ -715,7 +715,7 @@ class ProductTemplate(models.Model):
         if self.type == 'consu' and self.tracking != 'none':
             self.tracking = 'none'
 
-        valuation_layers_exist = self.env['stock.valuation.layer'].search_count([
+        valuation_layers_exist = self.env['stock.valuation.layer'].sudo().search_count([
             ('product_id', 'in', self.product_variant_ids.ids)
         ]) > 0
         # FIXME to fix in v17.0
@@ -739,7 +739,7 @@ class ProductTemplate(models.Model):
         if any('type' in vals and vals['type'] != prod_tmpl.type for prod_tmpl in self):
             # FIXME to fix in v17.0
             # Added valuation_layers check
-            valuation_layers = self.env['stock.valuation.layer'].search([
+            valuation_layers = self.env['stock.valuation.layer'].sudo().search([
                 ('product_id', 'in', self.mapped('product_variant_ids').ids)
             ], limit=1)
             if not valuation_layers:
