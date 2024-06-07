@@ -1360,9 +1360,6 @@ class MrpProduction(models.Model):
         """ Cancels production order, unfinished stock moves and set procurement
         orders in exception """
         self.workorder_ids.filtered(lambda x: x.state not in ['done', 'cancel']).action_cancel()
-        if not self.move_raw_ids:
-            self.state = 'cancel'
-            return True
         self._action_cancel()
         return True
 
