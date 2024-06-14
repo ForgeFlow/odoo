@@ -16,9 +16,9 @@ class PackageType(models.Model):
 
     name = fields.Char('Package Type', required=True)
     sequence = fields.Integer('Sequence', default=1, help="The first in the sequence is the default one.")
-    height = fields.Integer('Height', help="Packaging Height")
-    width = fields.Integer('Width', help="Packaging Width")
-    packaging_length = fields.Integer('Length', help="Packaging Length")
+    height = fields.Float('Height', help="Packaging Height")
+    width = fields.Float('Width', help="Packaging Width")
+    packaging_length = fields.Float('Length', help="Packaging Length")
     base_weight = fields.Float(string='Weight', help='Weight of the package type')
     max_weight = fields.Float('Max Weight', help='Maximum weight shippable in this packaging')
     barcode = fields.Char('Barcode', copy=False)
