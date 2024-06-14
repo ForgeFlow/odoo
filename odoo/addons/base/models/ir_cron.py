@@ -124,17 +124,17 @@ class ir_cron(models.Model):
                         job = cls._acquire_one_job(cron_cr, (job_id,))
                     except psycopg2.extensions.TransactionRollbackError:
                         cron_cr.rollback()
-                        _logger.debug("job %s has been processed by another worker, skip", job_id)
+                        _logger.warning("job %s has been processed by another worker, skip", job_id)
                         continue
                     if not job:
-                        _logger.debug("another worker is processing job %s, skip", job_id)
+                        _logger.warning("another worker is processing job %s, skip", job_id)
                         continue
-                    _logger.debug("job %s acquired", job_id)
+                    _logger.warning("job %s acquired", job_id)
                     # take into account overridings of _process_job() on that database
                     registry = odoo.registry(db_name)
                     registry[cls._name]._process_job(db, cron_cr, job)
                     cron_cr.commit()
-                    _logger.debug("job %s updated and released", job_id)
+                    _logger.warning("job %s updated and released", job_id)
 
         except BadVersion:
             _logger.warning('Skipping database %s as its base version is not %s.', db_name, BASE_VERSION)
