@@ -2317,7 +2317,7 @@ class MailThread(models.AbstractModel):
                         'res_partner_id': recipient_id,
                         'notification_type': 'email',
                         # 'mail_mail_id': email.id,
-                        'is_read': True,  # discard Inbox notification
+                        'is_read': False,  # all notifications unread
                         'notification_status': 'ready',
                     } for recipient_id in tocreate_recipient_ids]
                 emails |= email
