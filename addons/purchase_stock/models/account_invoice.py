@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models, _
-from odoo.tools.float_utils import float_compare
+from odoo.tools.float_utils import float_compare, float_is_zero
 
 
 class AccountMove(models.Model):
@@ -74,15 +74,9 @@ class AccountMove(models.Model):
                         valuation_price_unit = valuation_price_unit_total / valuation_total_qty
                         valuation_price_unit = line.product_id.uom_id._compute_price(valuation_price_unit, line.product_uom_id)
 
-                    elif line.product_id.cost_method == 'fifo':
-                        # In this condition, we have a real price-valuated product which has not yet been received
-                        valuation_price_unit = po_currency._convert(
-                            line.purchase_line_id.price_unit, move.currency_id,
-                            po_company, move.date, round=False,
-                        )
                     else:
-                        # For average/fifo/lifo costing method, fetch real cost price from incoming moves.
-                        price_unit = line.purchase_line_id.product_uom._compute_price(line.purchase_line_id.price_unit, line.product_uom_id)
+                        po_pu = line.purchase_line_id._get_gross_price_unit()
+                        price_unit = line.product_id.uom_id._compute_price(po_pu, line.product_uom_id)
                         valuation_price_unit = po_currency._convert(
                             price_unit, move.currency_id,
                             po_company, move.date, round=False
@@ -116,7 +110,7 @@ class AccountMove(models.Model):
                 # We consider there is a price difference if the subtotal is not zero. In case a
                 # discount has been applied, we can't round the price unit anymore, and hence we
                 # can't compare them.
-                if self._price_difference_is_applicable(move, line, price_subtotal, price_unit_prec):
+                if self._price_difference_is_applicable(move, line, price_subtotal, price_unit_prec, price_unit_val_dif):
                     # Add price difference account line.
 
                     vals = self._prepare_price_difference_account_line_vals(line, move, debit_pdiff_account, price_unit_val_dif)
@@ -129,8 +123,9 @@ class AccountMove(models.Model):
                     lines_vals_list.append(vals)
         return lines_vals_list
 
-    def _price_difference_is_applicable(self, move, line, price_subtotal, price_unit_prec):
-        return (not move.currency_id.is_zero(price_subtotal) 
+    def _price_difference_is_applicable(self, move, line, price_subtotal, price_unit_prec, price_unit_val_dif):
+        return (not move.currency_id.is_zero(price_subtotal)
+            and not float_is_zero(price_unit_val_dif, precision_digits=price_unit_prec)
             and float_compare(line["price_unit"], line.price_unit, precision_digits=price_unit_prec) == 0)
 
     def _prepare_price_difference_account_line_vals(self, line, move, debit_pdiff_account, price_unit_val_dif):
