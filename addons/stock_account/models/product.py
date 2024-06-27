@@ -193,6 +193,7 @@ class ProductProduct(models.Model):
             vals['remaining_qty'] = fifo_vals.get('remaining_qty')
             # In case of AVCO, fix rounding issue of standard price when needed.
             if self.cost_method == 'average':
+                vals["taken_data"] = fifo_vals["taken_data"]
                 rounding_error = currency.round(self.standard_price * self.quantity_svl - self.value_svl)
                 if rounding_error:
                     # If it is bigger than the (smallest number of the currency * quantity) / 2,
