@@ -69,10 +69,10 @@ class Holidays(models.Model):
             l.holiday_status_id.timesheet_project_id.sudo().company_id == (l.holiday_status_id.company_id or self.env.company))
 
         # Unlink previous timesheets do avoid doublon (shouldn't happen on the interface but meh)
-        old_timesheets = holidays.sudo().timesheet_ids
-        if old_timesheets:
-            old_timesheets.holiday_id = False
-            old_timesheets.unlink()
+        # old_timesheets = holidays.sudo().timesheet_ids
+        # if old_timesheets:
+        #     old_timesheets.holiday_id = False
+        #     old_timesheets.unlink()
 
         # create the timesheet on the vacation project
         holidays._timesheet_create_lines()
