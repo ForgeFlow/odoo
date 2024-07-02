@@ -265,6 +265,10 @@ class IrActionsReport(models.Model):
         if set_viewport_size:
             command_args.extend(['--viewport-size', landscape and '1024x1280' or '1280x1024'])
 
+        # Passing the cookie to wkhtmltopdf in order to resolve internal links.
+        if request and request.db:
+            command_args.extend(['--cookie', 'session_id', request.session.sid])
+
         # Less verbose error messages
         command_args.extend(['--quiet'])
 
