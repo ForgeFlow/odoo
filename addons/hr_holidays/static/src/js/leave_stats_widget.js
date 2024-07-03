@@ -102,6 +102,7 @@ odoo.define('hr_holidays.LeaveStatsWidget', function (require) {
                     [['department_id', '=', this.department.res_id],
                     ['state', '=', 'validate'],
                     ['holiday_type', '=', 'employee'],
+                    ['holiday_status_id.name', '!=', 'Public Holiday'],
                     ['date_from', '<=', month_date_to],
                     ['date_to', '>=', month_date_from]],
                     ['employee_id', 'date_from', 'date_to', 'number_of_days'],
