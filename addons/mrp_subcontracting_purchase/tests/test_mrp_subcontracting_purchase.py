@@ -33,6 +33,35 @@ class MrpSubcontractingPurchaseTest(TestMrpSubcontractingCommon):
                 'product_qty': 1,
             })],
         })
+        self.kit_product = self.env['product.product'].create({
+            'name': 'Kit Product',
+            'type': 'product',
+        })
+        self.bom_kit_product = self.env['mrp.bom'].create({
+            'product_tmpl_id': self.kit_product.product_tmpl_id.id,
+            'type': 'phantom',
+            'bom_line_ids': [(0, 0, {
+                    'product_id': self.comp1.id,
+                    'product_qty': 1,
+                },
+                {
+                    'product_id': self.comp2.id,
+                    'product_qty': 1,
+                }
+            )],
+        })
+        self.kit_product_2 = self.env['product.product'].create({
+            'name': 'Kit Product',
+            'type': 'product',
+        })
+        self.bom_kit_product_2 = self.env['mrp.bom'].create({
+            'product_tmpl_id': self.kit_product_2.product_tmpl_id.id,
+            'type': 'phantom',
+            'bom_line_ids': [(0, 0, {
+                'product_id': self.finished2.id,
+                'product_qty': 1,
+            })],
+        })
 
     def test_count_smart_buttons(self):
         resupply_sub_on_order_route = self.env['stock.location.route'].search([('name', '=', 'Resupply Subcontractor on Order')])
@@ -327,3 +356,49 @@ class MrpSubcontractingPurchaseTest(TestMrpSubcontractingCommon):
         comp_receipt.move_lines.quantity_done = 1
         comp_receipt.button_validate()
         self.assertEqual(ressuply_pick.state, 'assigned')
+
+    def test_qty_received_purchase_kit_product(self):
+        """
+            Test that the quantity received when purchasing kits is still correctly computed
+        """
+        # Buy a kit product
+        po = self.env['purchase.order'].create({
+            'partner_id': self.subcontractor_partner1.id,
+            'order_line': [Command.create({
+                'name': self.kit_product.name,
+                'product_id': self.kit_product.id,
+                'product_qty': 2.0,
+                'product_uom': self.kit_product.uom_id.id,
+                'price_unit': 100.0,
+            })],
+        })
+        po.button_confirm()
+        receipt = po.picking_ids
+        # receive the components
+        receipt.move_lines.quantity_done = 2
+        receipt.button_validate()
+
+        self.assertEqual(po.order_line[0].qty_received, 2)
+
+    def test_qty_received_purchase_kit_product_subcontracted_components(self):
+        """
+            Test the quantity received computation when purchasing a kit with a subcontracted component
+        """
+        # Buy a kit product
+        po = self.env['purchase.order'].create({
+            'partner_id': self.subcontractor_partner1.id,
+            'order_line': [Command.create({
+                'name': self.kit_product_2.name,
+                'product_id': self.kit_product_2.id,
+                'product_qty': 1.0,
+                'product_uom': self.kit_product_2.uom_id.id,
+                'price_unit': 100.0,
+            })],
+        })
+        po.button_confirm()
+        receipt = po.picking_ids
+        # receive the components
+        receipt.move_lines.quantity_done = 1
+        receipt.button_validate()
+
+        self.assertEqual(po.order_line[0].qty_received, 1)
