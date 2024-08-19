@@ -5,7 +5,7 @@
 {
     'name': "Partner Autocomplete",
     'summary': "Auto-complete partner companies' data",
-    'version': '1.1',
+    'version': '1.2',
     'description': """
        Auto-complete partner companies' data
     """,
