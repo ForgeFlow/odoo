@@ -123,8 +123,7 @@ class AccountPaymentMethodLine(models.Model):
     @api.depends('payment_method_id.name')
     def _compute_name(self):
         for method in self:
-            if not method.name:
-                method.name = method.payment_method_id.name
+            method.name = method.payment_method_id.name + " (" + method.payment_type + ")"
 
     @api.constrains('name')
     def _ensure_unique_name_for_journal(self):
