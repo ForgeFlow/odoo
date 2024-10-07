@@ -343,6 +343,7 @@ class MicrosoftSync(models.AbstractModel):
             dict(self._microsoft_to_odoo_values(e, with_ids=True), need_sync_m=False)
             for e in (new - new_recurrence)
         ]
+        _logger.info("Microsoft to Odoo values: %s" % odoo_values)
         synced_events = self.with_context(dont_notify=True)._create_from_microsoft(new, odoo_values)
         synced_recurrences, updated_events = self._sync_recurrence_microsoft2odoo(existing, new_recurrence)
         synced_events |= updated_events

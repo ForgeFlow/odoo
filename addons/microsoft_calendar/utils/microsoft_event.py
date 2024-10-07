@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+import logging
 from odoo.api import model
 from typing import Iterator, Mapping
 from collections import abc
 from odoo.tools import ReadonlyDict, email_normalize
 from odoo.addons.microsoft_calendar.utils.event_id_storage import combine_ids
+
+_logger = logging.getLogger(__name__)
 
 
 class MicrosoftEvent(abc.Set):
@@ -165,13 +168,16 @@ class MicrosoftEvent(abc.Set):
                 that no Odoo user will be able to modify this event. All modifications will be done from Outlook.
         """
         if self.isOrganizer:
+            _logger.info("From microsoft the current user is considered an organizer.")
             return env.user.id
 
         if not self.organizer:
+            _logger.info("This event has no organizer from Microsoft.")
             return False
 
         organizer_email = self.organizer.get('emailAddress') and email_normalize(self.organizer.get('emailAddress').get('address'))
         if organizer_email:
+            _logger.info("Trying to get organizer by matching email %s" % organizer_email)
             # Warning: In Microsoft: 1 email = 1 user; but in Odoo several users might have the same email
             user = env['res.users'].search([('email', '=', organizer_email)], limit=1)
             return user.id if user else False

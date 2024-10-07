@@ -299,6 +299,7 @@ class Meeting(models.Model):
         else:
             stop = parse(microsoft_event.end.get('dateTime')).astimezone(timeZone_stop).replace(tzinfo=None)
         values = default_values or {}
+        _logger.info("Getting values for event %s" % microsoft_event.subject)
         values.update({
             'name': microsoft_event.subject or _("(No title)"),
             'description': microsoft_event.body and microsoft_event.body['content'],
