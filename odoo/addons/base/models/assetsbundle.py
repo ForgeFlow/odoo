@@ -267,6 +267,9 @@ class AssetsBundle(object):
                FROM ir_attachment
               WHERE create_uid = %s
                 AND url like %s
+                AND res_model = 'ir.ui.view'
+                AND res_id = 0
+                AND public = true
            GROUP BY datas_fname
            ORDER BY datas_fname
          """, [SUPERUSER_ID, url_pattern])
