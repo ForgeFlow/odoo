@@ -46,14 +46,6 @@ class SaleOrder(models.Model):
         self.ensure_one()
         return self.env['sale.order.line']
 
-    @api.returns('self', lambda value: value.id)
-    def copy(self, default=None):
-        order = super(SaleOrder, self).copy(default)
-        reward_lines = order.order_line.filtered('is_reward_line')
-        if reward_lines:
-            reward_lines.unlink()
-        return order
-
     def action_confirm(self):
         for order in self:
             all_coupons = order.applied_coupon_ids | order.coupon_point_ids.coupon_id | order.order_line.coupon_id
@@ -603,14 +595,57 @@ class SaleOrder(models.Model):
         """
         self.ensure_one()
         command_list = []
-        for vals, line in zip(reward_vals, old_lines):
-            command_list.append((Command.UPDATE, line.id, vals))
-        if len(reward_vals) > len(old_lines):
-            command_list.extend((Command.CREATE, 0, vals) for vals in reward_vals[len(old_lines):])
-        elif len(reward_vals) < len(old_lines) and delete:
-            command_list.extend((Command.DELETE, line.id) for line in old_lines[len(reward_vals):])
-        self.write({'order_line': command_list})
-        return self.env['sale.order.line'] if delete else old_lines[len(reward_vals):]
+        
+        # Helper function to extract tax_id from reward_vals
+        def get_tax_id(vals):
+            for command, tax_id, _ in vals.get('tax_id', []):
+                if command == Command.LINK:
+                    return tax_id
+            return self.env["account.tax"]
+
+        # Loop over reward_vals and try to find the matching sale order line
+        for vals in reward_vals:
+            reward_tax_id = get_tax_id(vals)
+            if reward_tax_id:
+                matching_lines = [line for line in self.order_line if reward_tax_id in [tax.id for tax in line.tax_id]]
+            else:
+                matching_lines = [line for line in self.order_line if not line.tax_id]
+            
+            if matching_lines:
+                total_price = sum(line.price_unit * line.product_uom_qty for line in matching_lines)  # Total price of all matching lines
+                total_discount = vals["price_unit"] * vals["product_uom_qty"]  # Total discount to be applied
+                
+                # If total price is zero, we should avoid division by zero
+                if total_price == 0:
+                    continue
+                
+                # Distribute the discount proportionally to each line
+                for matched_line in matching_lines:
+                    # Proportional discount based on price_unit
+                    line_discount_value = ((matched_line.price_unit * matched_line.product_uom_qty) / total_price) * total_discount
+                    # Assuming vals is a dictionary and matching_lines is a list
+                    if 'points_cost' in vals:
+                        matching_lines_count = len(matching_lines)
+                        if matching_lines_count > 0:
+                            vals['points_cost'] /= matching_lines_count
+                    myvals = vals.copy()
+                    myvals.pop('tax_id')
+                    myvals.pop('product_id')
+                    myvals.pop('product_uom')
+                    myvals.pop('name')
+                    myvals.pop('sequence')
+                    myvals.pop('product_uom_qty')
+                    myvals.pop('price_unit')
+                    try:
+                        discount_percentage = (matched_line.price_unit - (matched_line.price_unit + line_discount_value/matched_line.product_uom_qty))/matched_line.price_unit*100
+                        myvals["discount"] = discount_percentage
+                    except ZeroDivisionError:
+                        myvals["discount"] = 0  # Handle division by zero gracefully
+
+                    command_list.append((Command.UPDATE, matched_line.id, myvals))
+        if command_list:
+            self.write({'order_line': command_list})
+        return self.env["sale.order.line"]
 
     def _apply_program_reward(self, reward, coupon, **kwargs):
         """
@@ -842,9 +877,6 @@ class SaleOrder(models.Model):
         # |       STEP 5: Cleanup                    |
         # +==========================================+
 
-        order_line_update = [(Command.DELETE, line.id) for line in lines_to_unlink]
-        if order_line_update:
-            self.write({'order_line': order_line_update})
         if coupons_to_unlink:
             coupons_to_unlink.sudo().unlink()
         if point_entries_to_unlink:
