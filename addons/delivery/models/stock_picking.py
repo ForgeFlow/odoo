@@ -173,6 +173,7 @@ class StockPicking(models.Model):
 
     @api.multi
     def send_to_shipper(self):
+        print("delivery send_to_shipper - 1")
         self.ensure_one()
         res = self.carrier_id.send_shipping(self)[0]
         if self.carrier_id.free_over and self.sale_id and self.sale_id._compute_amount_total_without_delivery() >= self.carrier_id.amount:

@@ -376,6 +376,7 @@ class StockMove(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        print("stock move create 1")
         # TDE CLEANME: why doing this tracking on picking here ? seems weird
         tracking = []
         for vals in vals_list:
@@ -386,9 +387,11 @@ class StockMove(models.Model):
         res = super(StockMove, self).create(vals_list)
         for picking, initial_values in tracking:
             picking.message_track(picking.fields_get(['state']), initial_values)
+        print("stock move create 2")
         return res
 
     def write(self, vals):
+        print("stock move write 1")
         # FIXME: pim fix your crap
         receipt_moves_to_reassign = self.env['stock.move']
         move_to_recompute_state = self.env['stock.move']
@@ -461,6 +464,7 @@ class StockMove(models.Model):
             move_to_recompute_state._recompute_state()
         if receipt_moves_to_reassign:
             receipt_moves_to_reassign._action_assign()
+        print("stock move write 2")
         return res
 
     def action_show_details(self):
@@ -708,10 +712,12 @@ class StockMove(models.Model):
         type (moves should already have them identical). Otherwise, create a new
         picking to assign them to. """
         Picking = self.env['stock.picking']
+        print("stock move _assign_picking 1")
         for move in self:
             recompute = False
             picking = move._search_picking_for_assignation()
             if picking:
+                print("stock move _assign_picking 2")
                 if picking.partner_id.id != move.partner_id.id or picking.origin != move.origin:
                     # If a picking is found, we'll append `move` to its move list and thus its
                     # `partner_id` and `ref` field will refer to multiple records. In this
@@ -721,6 +727,7 @@ class StockMove(models.Model):
                         'origin': False,
                     })
             else:
+                print("stock move _assign_picking 3")
                 recompute = True
                 picking = Picking.create(move._get_new_picking_values())
             move.write({'picking_id': picking.id})
@@ -740,6 +747,7 @@ class StockMove(models.Model):
     def _get_new_picking_values(self):
         """ Prepares a new picking for this move as it could not be assigned to
         another picking. This method is designed to be inherited. """
+        print("stock move _get_new_picking_values 1")
         return {
             'origin': self.origin,
             'company_id': self.company_id.id,
@@ -759,6 +767,7 @@ class StockMove(models.Model):
         :param: merge: According to this boolean, a newly confirmed move will be merged
         in another move of the same picking sharing its characteristics.
         """
+        print("stock move _action_confirm 1")
         move_create_proc = self.env['stock.move']
         move_to_confirm = self.env['stock.move']
         move_waiting = self.env['stock.move']
@@ -802,6 +811,7 @@ class StockMove(models.Model):
         comming from a stock move. This method could be override in order to add other custom key that could
         be used in move/po creation.
         """
+        print("stock move _prepare_procurement_values 1")
         self.ensure_one()
         group_id = self.group_id or False
         if self.rule_id:
@@ -912,6 +922,7 @@ class StockMove(models.Model):
         return taken_quantity
 
     def _action_assign(self):
+        print("stock move _action_assign 1")
         """ Reserve stock moves by creating their stock move lines. A stock move is
         considered reserved once the sum of `product_qty` for all its move lines is
         equal to its `product_qty`. If it is less, the stock move is considered
@@ -1063,6 +1074,7 @@ class StockMove(models.Model):
         return True
 
     def _prepare_extra_move_vals(self, qty):
+        print("stock move _prepare_extra_move_vals 1")
         vals = {
             'procure_method': 'make_to_stock',
             'origin_returned_move_id': self.origin_returned_move_id.id,
@@ -1080,6 +1092,7 @@ class StockMove(models.Model):
         The rationale for the creation of an extra move is the application of a potential push
         rule that will handle the extra quantities.
         """
+        print("stock move _create_extra_move 1")
         extra_move = self
         rounding = self.product_uom.rounding
         # moves created after the picking is assigned do not have `product_uom_qty`, but we shouldn't create extra moves for them
@@ -1124,6 +1137,7 @@ class StockMove(models.Model):
         pass
 
     def _action_done(self):
+        print("stock move _action_done 1")
         self.filtered(lambda move: move.state == 'draft')._action_confirm()  # MRP allows scrapping draft moves
         moves = self.exists().filtered(lambda x: x.state not in ('done', 'cancel'))
         moves_todo = self.env['stock.move']
@@ -1171,6 +1185,7 @@ class StockMove(models.Model):
 
         if picking:
             picking._create_backorder()
+        print("stock move _action_done 2")
         return moves_todo
 
     def unlink(self):

@@ -34,6 +34,7 @@ class ReturnPicking(models.TransientModel):
 
     @api.model
     def default_get(self, fields):
+        print("stock default_get - 1")
         if len(self.env.context.get('active_ids', list())) > 1:
             raise UserError(_("You may only return one picking at a time."))
         res = super(ReturnPicking, self).default_get(fields)
@@ -103,12 +104,15 @@ class ReturnPicking(models.TransientModel):
         return vals
 
     def _create_returns(self):
+        print("stock _create_returns - 1")
         # TODO sle: the unreserve of the next moves could be less brutal
         for return_move in self.product_return_moves.mapped('move_id'):
+            print("stock _create_returns - 2")
             return_move.move_dest_ids.filtered(lambda m: m.state not in ('done', 'cancel'))._do_unreserve()
 
         # create new picking for returned products
         picking_type_id = self.picking_id.picking_type_id.return_picking_type_id.id or self.picking_id.picking_type_id.id
+        print("stock _create_returns - 3")
         new_picking = self.picking_id.copy({
             'move_lines': [],
             'picking_type_id': picking_type_id,
@@ -120,13 +124,17 @@ class ReturnPicking(models.TransientModel):
             values={'self': new_picking, 'origin': self.picking_id},
             subtype_id=self.env.ref('mail.mt_note').id)
         returned_lines = 0
+        print("stock _create_returns - 4")
         for return_line in self.product_return_moves:
+            print("stock _create_returns - 5")
             if not return_line.move_id:
                 raise UserError(_("You have manually created product lines, please delete them to proceed."))
             # TODO sle: float_is_zero?
             if return_line.quantity:
+                print("stock _create_returns - 6")
                 returned_lines += 1
                 vals = self._prepare_move_default_values(return_line, new_picking)
+                print("stock _create_returns - 7")
                 r = return_line.move_id.copy(vals)
                 vals = {}
 
@@ -157,13 +165,15 @@ class ReturnPicking(models.TransientModel):
                 r.write(vals)
         if not returned_lines:
             raise UserError(_("Please specify at least one non-zero quantity."))
-
+        print("stock _create_returns - 8")
         new_picking.action_confirm()
         new_picking.action_assign()
+        print("stock _create_returns - 9")
         return new_picking.id, picking_type_id
 
     def create_returns(self):
         for wizard in self:
+            print("stock create_returns - 1")
             new_picking_id, pick_type_id = wizard._create_returns()
         # Override the context to disable all the potential filters that could have been set previously
         ctx = dict(self.env.context)
@@ -176,6 +186,7 @@ class ReturnPicking(models.TransientModel):
             'search_default_late': False,
             'search_default_available': False,
         })
+        print("stock create_returns - 2")
         return {
             'name': _('Returned Picking'),
             'view_type': 'form',

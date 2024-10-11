@@ -371,6 +371,7 @@ class Picking(models.Model):
                 self.state = 'assigned'
             else:
                 self.state = relevant_move_state
+        print("stock picking _compute_state - %s -> %s" % (self.name, self.state))
 
     @api.one
     @api.depends('move_lines.priority')
@@ -455,6 +456,7 @@ class Picking(models.Model):
 
     @api.onchange('picking_type_id', 'partner_id')
     def onchange_picking_type(self):
+        print("stock picking onchange_picking_type 1")
         if self.picking_type_id:
             if self.picking_type_id.default_location_src_id:
                 location_id = self.picking_type_id.default_location_src_id.id
@@ -491,6 +493,7 @@ class Picking(models.Model):
 
     @api.model
     def create(self, vals):
+        print("stock picking create 1")
         # TDE FIXME: clean that brol
         defaults = self.default_get(['name', 'picking_type_id'])
         if vals.get('name', '/') == '/' and defaults.get('name', '/') == '/' and vals.get('picking_type_id', defaults.get('picking_type_id')):
@@ -505,12 +508,16 @@ class Picking(models.Model):
                     move[2]['location_id'] = vals['location_id']
                     move[2]['location_dest_id'] = vals['location_dest_id']
         res = super(Picking, self).create(vals)
+        print("stock picking create 2")
         res._autoconfirm_picking()
+        print("stock picking create 3")
         return res
 
     @api.multi
     def write(self, vals):
+        print("stock picking write 1")
         res = super(Picking, self).write(vals)
+        print("stock picking write 2")
         # Change locations of moves if those of the picking change
         after_vals = {}
         if vals.get('location_id'):
@@ -617,6 +624,7 @@ class Picking(models.Model):
         todo_moves = self.mapped('move_lines').filtered(lambda self: self.state in ['draft', 'waiting', 'partially_available', 'assigned', 'confirmed'])
         # Check if there are ops not linked to moves yet
         for pick in self:
+            print("stock picking action_done 1 - %s" % pick.name)
             # # Explode manually added packages
             # for ops in pick.move_line_ids.filtered(lambda x: not x.move_id and not x.product_id):
             #     for quant in ops.package_id.quant_ids: #Or use get_content for multiple levels
@@ -640,6 +648,7 @@ class Picking(models.Model):
                 if moves:
                     ops.move_id = moves[0].id
                 else:
+                    print("stock picking action_done 2")
                     new_move = self.env['stock.move'].create(self._prepare_stock_move_vals(ops, pick))
                     ops.move_id = new_move.id
                     new_move = new_move._action_confirm()
@@ -717,6 +726,7 @@ class Picking(models.Model):
 
     @api.multi
     def button_validate(self):
+        print("stock picking button_validate 1")
         self.ensure_one()
         if not self.move_lines and not self.move_line_ids:
             raise UserError(_('Please add some items to move.'))
@@ -777,6 +787,7 @@ class Picking(models.Model):
         # Check backorder should check for other barcodes
         if self._check_backorder():
             return self.action_generate_backorder_wizard()
+        print("stock picking button_validate 2")
         self.action_done()
         return
 
