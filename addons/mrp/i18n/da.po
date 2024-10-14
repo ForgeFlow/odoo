@@ -5888,7 +5888,7 @@ msgstr "Arbejdsinstruktion"
 #: model:ir.model.fields,field_description:mrp.field_stock_scrap__workorder_id
 #: model_terms:ir.ui.view,arch_db:mrp.view_mrp_production_workorder_form_view_filter
 msgid "Work Order"
-msgstr "Produktionsordre"
+msgstr "Arbejdsordre"
 
 #. module: mrp
 #: model:ir.model.fields,field_description:mrp.field_res_config_settings__group_mrp_workorder_dependencies
@@ -5928,7 +5928,7 @@ msgstr "Arbejdsorde der skal bruges"
 #: model_terms:ir.ui.view,arch_db:mrp.mrp_production_form_view
 #: model_terms:ir.ui.view,arch_db:mrp.res_config_settings_view_form
 msgid "Work Orders"
-msgstr "Produktionsordre"
+msgstr "Arbejdsordrer"
 
 #. module: mrp
 #: model:ir.actions.act_window,name:mrp.mrp_workorder_workcenter_report
