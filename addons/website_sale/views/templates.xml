@@ -985,7 +985,7 @@
                                         <div id="add_to_cart_wrap" t-attf-class="{{'d-none' if combination_info['prevent_zero_price_sale'] else 'd-inline-flex'}} align-items-center mb-2 me-auto">
                                             <a data-animation-selector=".o_wsale_product_images" role="button" id="add_to_cart" t-attf-class="btn btn-primary js_check_product a-submit flex-grow-1 #{'btn-lg' if ctaSizeBig else ''}" href="#">
                                                 <i class="fa fa-shopping-cart me-2"/>
-                                                <span style="font-weight: bold">ADD TO CART</span>
+                                                <span style="font-weight: bold">ADD TO QUOTE</span>
                                             </a>
                                         </div>
                                         <div id="product_option_block" class="d-flex flex-wrap w-100"/>
@@ -1259,7 +1259,7 @@
                           <div id="wizard-step10" t-att-class="'progress-wizard-step %s' % (step == 10 and 'active' or step&gt;10 and 'complete' or 'disabled')">
                             <div class="progress-wizard-bar d-none d-md-block"/>
                             <span class="progress-wizard-dot d-none d-md-inline-block"></span>
-                            <div class="text-center progress-wizard-steplabel">Review Order</div>
+                            <div class="text-center progress-wizard-steplabel">Review Quote</div>
                           </div>
                         </a>
                         <a class="no-decoration" t-att-href="step&gt;=20 and '/shop/checkout' or '#'">
@@ -1273,7 +1273,7 @@
                           <div id="wizard-step40" t-att-class="'progress-wizard-step %s' % (step == 40 and 'active' or step&gt;40 and 'complete' or 'disabled')">
                             <div class="progress-wizard-bar d-none d-md-block"/>
                             <span class="progress-wizard-dot d-none d-md-inline-block"></span>
-                            <div class="text-center progress-wizard-steplabel">Confirm Order</div>
+                            <div class="text-center progress-wizard-steplabel">Confirm Quote</div>
                           </div>
                         </a>
                     </div>
@@ -1728,7 +1728,7 @@
                             <div class="d-flex justify-content-between mt-3">
                                 <a role="button" href="/shop/cart" class="btn btn-secondary mb32">
                                     <i class="fa fa-chevron-left"/>
-                                    <span>Return to Cart</span>
+                                    <span>Return to Quote</span>
                                 </a>
                                 <a role="button" href="/shop/confirm_order" class="btn btn-primary mb32">
                                     <span>Confirm</span>
@@ -2019,7 +2019,7 @@
                                 <form name="o_wsale_confirm_order" target="_self" action="/shop/payment/validate" method="post">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" t-nocache="The csrf token must always be up to date."/>
                                     <t t-call="website_sale.payment_footer">
-                                        <t t-set="submit_button_label">Confirm Order</t>
+                                        <t t-set="submit_button_label">Confirm Quote</t>
                                     </t>
                                 </form>
                             </div>
@@ -2036,7 +2036,7 @@
              class="form-check mt-2 o_accept_tc_button"/>
         <div class="float-start mt-2">
             <a role="button" href="/shop/cart" class="btn btn-secondary">
-                <i class="fa fa-chevron-left"/> Return to Cart
+                <i class="fa fa-chevron-left"/> Return to Quote
             </a>
         </div>
         <div class="float-end mt-2">

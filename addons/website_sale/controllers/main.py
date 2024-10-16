@@ -1602,7 +1602,8 @@ class WebsiteSale(http.Controller):
             return request.redirect('/shop')
 
         if order and not order.amount_total and not tx:
-            order.with_context(send_email=True).action_confirm()
+            # order.with_context(send_email=True).action_confirm()
+            order.with_context(mark_so_as_sent=True)._send_order_confirmation_mail()
             return request.redirect(order.get_portal_url())
 
         # clean context and session, then redirect to the confirmation page
