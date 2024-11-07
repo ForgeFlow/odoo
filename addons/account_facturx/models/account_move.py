@@ -571,7 +571,8 @@ class AccountMove(models.Model):
 
             # Add to invoice global tax amounts.
             invoice_global_tax_details['base_amount'] += invoice_line.balance
-            invoice_global_tax_details['base_amount_currency'] += invoice_line.amount_currency
+            currency_amount = invoice_line.amount_currency if invoice_line.currency_id else invoice_line.balance
+            invoice_global_tax_details['base_amount_currency'] += currency_amount
 
             for tax_values in tax_values_list:
                 grouping_key = grouping_key_generator(tax_values)
@@ -583,7 +584,7 @@ class AccountMove(models.Model):
                         invoice_line]
                     invoice_line_global_tax_details.update({
                         'base_amount': invoice_line.balance,
-                        'base_amount_currency': invoice_line.amount_currency,
+                        'base_amount_currency': currency_amount,
                     })
                 else:
                     invoice_line_global_tax_details = invoice_global_tax_details['invoice_line_tax_details'][
