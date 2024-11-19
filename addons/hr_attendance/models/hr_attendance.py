@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import models, fields, api, exceptions, _
-from odoo.tools import format_datetime
+from odoo.tools import format_datetime, config
 
 
 class HrAttendance(models.Model):
@@ -98,6 +98,23 @@ class HrAttendance(models.Model):
                         'empl_name': attendance.employee_id.name,
                         'datetime': format_datetime(self.env, last_attendance_before_check_out.check_in, dt_format=False),
                     })
+
+    @api.constrains('check_out')
+    def _check_updated_check_out_without_permissions(self):
+        attendance_group_xml_id = 'hr_attendance.group_hr_attendance_user'
+        seconds_tolerance = 1
+        now = fields.Datetime.now()
+        if config["test_enable"] and self.env.context.get("test_datetime_now", False):
+            now = self.env.context.get("test_datetime_now", False)
+        for attendance in self:
+            if (
+                    attendance.check_out
+                    and abs((attendance.check_out - now).total_seconds())
+                    > seconds_tolerance
+                    and not self.env.user.has_group(attendance_group_xml_id)
+            ):
+                raise exceptions.ValidationError(
+                    _('You are not allowed to modify the check out of an attendance after it has finished.'))
 
     @api.returns('self', lambda value: value.id)
     def copy(self):
