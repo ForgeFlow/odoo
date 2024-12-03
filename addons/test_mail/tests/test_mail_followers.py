@@ -25,6 +25,7 @@ class BaseFollowersTest(common.BaseFunctionalTest):
         cls.mt_mg_def_int = cls.env['mail.message.subtype'].create({'name': 'mt_mg_def', 'default': True, 'res_model': 'mail.test.simple', 'internal': True})
         cls.default_group_subtypes = Subtype.search([('default', '=', True), '|', ('res_model', '=', 'mail.test.simple'), ('res_model', '=', False)])
         cls.default_group_subtypes_portal = Subtype.search([('internal', '=', False), ('default', '=', True), '|', ('res_model', '=', 'mail.test.simple'), ('res_model', '=', False)])
+        cls.user_portal = mail_new_test_user(cls.env, login='hec', groups='base.group_portal', name='Hector Vior')
 
     def test_field_message_is_follower(self):
         test_record = self.test_record.sudo(self.user_employee)
@@ -145,12 +146,12 @@ class BaseFollowersTest(common.BaseFunctionalTest):
             channel_ids=[self.channel_listen.id]
         )
 
-    @users('employee')
+    @users('ernest')
     def test_recipients_fetch_pids_only(self):
         """ Test that _get_recipient_data correctly fetch groups for additional pids
         """
         users = self.user_admin + self.user_employee + self.user_portal
-        recipient_data = self.env['mail.followers']._get_recipient_data(self.env['mail.thread'], False, False, pids=users.partner_id.ids)
+        recipient_data = self.env['mail.followers']._get_recipient_data(self.env['mail.thread'], False, pids=users.mapped("partner_id").ids)
         groups = {pid: set(groups) for pid, _, _, _, _, _, groups in recipient_data}
 
         self.assertEqual(groups[self.user_admin.partner_id.id], set(self.user_admin.groups_id.ids), "User Admin groups are not correctly fetched")
