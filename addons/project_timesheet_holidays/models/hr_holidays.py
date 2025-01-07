@@ -65,7 +65,6 @@ class Holidays(models.Model):
         holidays = self.filtered(
             lambda l: l.holiday_type == 'employee' and
             l.holiday_status_id.timesheet_project_id and
-            l.holiday_status_id.timesheet_task_id and
             l.holiday_status_id.timesheet_project_id.sudo().company_id == (l.holiday_status_id.company_id or self.env.company))
 
         # Unlink previous timesheets do avoid doublon (shouldn't happen on the interface but meh)
