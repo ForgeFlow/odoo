@@ -1900,6 +1900,9 @@ msgid ""
 "                            products later. Do not create a backorder if you will not\n"
 "                            process the remaining products."
 msgstr ""
+"Opret en restordre hvis du regner med at behandle resterende\n"
+"                            produkter senere. Opret ikke en restordre hvis du ikke vil\n"
+"                            behandle de resterende produkter."
 
 #. module: stock
 #: model_terms:ir.actions.act_window,help:stock.stock_picking_type_action
