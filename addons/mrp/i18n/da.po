@@ -6262,6 +6262,9 @@ msgid ""
 "                        Create a backorder if you expect to process the remaining quantities later.<br/>\n"
 "                        Do not create a backorder if you will not process the remaining products."
 msgstr ""
+"Du har indtastet færre serienumre end den mængde, der skal produceres.<br/>\n"
+"                        Opret en restordre hvis du regner med at behandle resterende produkter senere.<br/>\n"
+"                        Opret ikke en restordre hvis du ikke vil behandle de resterende produkter."
 
 #. module: mrp
 #: model_terms:ir.ui.view,arch_db:mrp.view_immediate_production
