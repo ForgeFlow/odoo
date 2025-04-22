@@ -413,7 +413,9 @@ class StockMoveLine(models.Model):
                         # If an inventory adjustment is linked, the user is allowed to enter
                         # tracked products without a `lot_id`.
                         continue
-
+                    elif self.env.context.get('is_scrap'):
+                        # allow scrapping tracked products without a lot
+                        continue
                     if not ml.lot_id:
                         raise UserError(_('You need to supply a Lot/Serial number for product %s.') % ml.product_id.display_name)
             elif qty_done_float_compared < 0:
