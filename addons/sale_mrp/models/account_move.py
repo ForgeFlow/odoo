@@ -11,7 +11,17 @@ class AccountMoveLine(models.Model):
 
         so_line = self.sale_line_ids and self.sale_line_ids[-1] or False
         if so_line:
-            bom = self.env['mrp.bom']._bom_find(product=so_line.product_id, company_id=so_line.company_id.id, bom_type='phantom')[:1]
+            # BUG in core: if you have a variant bom in a different company than the
+            # SO company it will be taken and then in the filtered it will be gone
+            # In order to reproduce the bug you have to have
+            # a variant bom in another company than SO company
+            # a product template bom in the SO company
+            # in your environment have the two companies activated (if you only have
+            # one company activated the bug will not show because the variant bom
+            # is not found).
+            # The fix is giving preference to the bom of the sale line
+            boms = so_line.move_ids.filtered(lambda m: m.state != 'cancel').mapped('bom_line_id.bom_id').filtered(lambda b: b.type == 'phantom')
+            bom = (boms or self.env['mrp.bom']._bom_find(product=so_line.product_id, company_id=so_line.company_id.id, bom_type='phantom'))[:1]
             if bom:
                 is_line_reversing = bool(self.move_id.reversed_entry_id)
                 qty_to_invoice = self.product_uom_id._compute_quantity(self.quantity, self.product_id.uom_id)
@@ -30,4 +40,3 @@ class AccountMoveLine(models.Model):
                 price_unit = average_price_unit / bom.product_qty or price_unit
                 price_unit = self.product_id.uom_id._compute_price(price_unit, self.product_uom_id)
         return price_unit
-
