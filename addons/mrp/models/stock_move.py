@@ -44,6 +44,12 @@ class StockMoveLine(models.Model):
                 move_line._log_message(production, move_line, 'mrp.track_production_move_template', vals)
         return super(StockMoveLine, self).write(vals)
 
+    def _avoid_requiring_lot(self):
+        if self.move_id.unbuild_id:
+            # allow unbuild on untracked product with MO with tracked products
+            return True
+        return super()._avoid_requiring_lot()
+
 
 class StockMove(models.Model):
     _inherit = 'stock.move'

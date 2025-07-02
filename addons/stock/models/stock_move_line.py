@@ -416,6 +416,8 @@ class StockMoveLine(models.Model):
                     elif self.env.context.get('is_scrap'):
                         # allow scrapping tracked products without a lot
                         continue
+                    elif ml._avoid_requiring_lot():
+                        continue
                     if not ml.lot_id:
                         raise UserError(_('You need to supply a Lot/Serial number for product %s.') % ml.product_id.display_name)
             elif qty_done_float_compared < 0:
@@ -456,6 +458,9 @@ class StockMoveLine(models.Model):
             'product_uom_qty': 0.00,
             'date': fields.Datetime.now(),
         })
+
+    def _avoid_requiring_lot(self):
+        return False
 
     def _log_message(self, record, move, template, vals):
         data = vals.copy()
