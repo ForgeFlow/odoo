@@ -686,8 +686,8 @@ class MrpProduction(models.Model):
             moves_to_do = order.move_raw_ids.filtered(lambda x: x.state not in ('done', 'cancel'))
             for move in moves_to_do.filtered(lambda m: m.product_qty == 0.0 and m.quantity_done > 0):
                 move.product_uom_qty = move.quantity_done
-            for line in moves_to_do.mapped('move_line_ids').filtered(lambda l: l.product_id.tracking != 'none' and not l.lot_id):
-                line.qty_done = 0
+            # for line in moves_to_do.mapped('move_line_ids').filtered(lambda l: l.product_id.tracking != 'none' and not l.lot_id):
+            #     line.qty_done = 0
             moves_to_do._action_done()
             moves_to_do = order.move_raw_ids.filtered(lambda x: x.state == 'done') - moves_not_to_do
             order._cal_price(moves_to_do)
@@ -696,7 +696,7 @@ class MrpProduction(models.Model):
             order.action_assign()
             consume_move_lines = moves_to_do.mapped('active_move_line_ids')
             for moveline in moves_to_finish.mapped('active_move_line_ids'):
-                if moveline.product_id == order.product_id and moveline.move_id.has_tracking != 'none':
+                if moveline.lot_id and moveline.product_id == order.product_id and moveline.move_id.has_tracking != 'none':
                     if any([not ml.lot_produced_id for ml in consume_move_lines]):
                         raise UserError(_('You can not consume without telling for which lot you consumed it'))
                     # Link all movelines in the consumed with same lot_produced_id false or the correct lot_produced_id
