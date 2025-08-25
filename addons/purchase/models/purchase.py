@@ -580,8 +580,10 @@ class PurchaseOrder(models.Model):
         # 4) Some moves might actually be refunds: convert them if the total amount is negative
         # We do this after the moves have been created since we need taxes, etc. to know if the total
         # is actually negative or not
-        moves.filtered(lambda m: m.currency_id.round(m.amount_total) < 0).action_switch_invoice_into_refund_credit_note()
-
+        # HACK disable this as it is causing unbalance journal entries
+        # and the journal items value is fine anyway.
+        # moves.filtered(lambda m: m.currency_id.round(m.amount_total) < 0).action_switch_invoice_into_refund_credit_note()
+        # HACK END
         return self.action_view_invoice(moves)
 
     def _prepare_invoice(self):
