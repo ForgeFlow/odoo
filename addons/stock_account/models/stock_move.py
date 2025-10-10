@@ -480,7 +480,11 @@ class StockMove(models.Model):
         location_to = self.location_dest_id
         company_from = self._is_out() and self.mapped('move_line_ids.location_id.company_id') or False
         company_to = self._is_in() and self.mapped('move_line_ids.location_dest_id.company_id') or False
-
+        if not company_from and not company_to:
+            if self._is_in():
+                company_to = self.mapped('move_line_ids.company_id')
+            if self._is_out():
+                company_from = self.mapped('move_line_ids.company_id')
         # Create Journal Entry for products arriving in the company; in case of routes making the link between several
         # warehouse of the same company, the transit location belongs to this company, so we don't need to create accounting entries
         if self._is_in():
