@@ -8,6 +8,7 @@ import werkzeug.urls
 import requests
 
 from odoo import api, fields, models, exceptions, _
+from odoo.addons.iap.tools import iap_tools
 from odoo.tools import pycompat
 
 _logger = logging.getLogger(__name__)
@@ -212,9 +213,9 @@ class IapAccount(models.Model):
     def get_credits_url(self, service_name, base_url='', credit=0, trial=False):
         dbuuid = self.env['ir.config_parameter'].sudo().get_param('database.uuid')
         if not base_url:
-            endpoint = get_endpoint(self.env)
+            endpoint = iap_tools.iap_get_endpoint(self.env)
             route = '/iap/1/credit'
-            base_url = endpoint + route
+            base_url = werkzeug.urls.url_join(endpoint, route)
         account_token = self.get(service_name).account_token
         d = {
             'dbuuid': dbuuid,
@@ -229,7 +230,7 @@ class IapAccount(models.Model):
     @api.model
     def get_account_url(self):
         route = '/iap/services'
-        endpoint = get_endpoint(self.env)
+        endpoint = iap_tools.iap_get_endpoint(self.env)
         d = {'dbuuid': self.env['ir.config_parameter'].sudo().get_param('database.uuid')}
 
         return '%s?%s' % (endpoint + route, werkzeug.urls.url_encode(d))
@@ -253,15 +254,15 @@ class IapAccount(models.Model):
 
         if account:
             route = '/iap/1/balance'
-            endpoint = get_endpoint(self.env)
-            url = endpoint + route
+            endpoint = iap_tools.iap_get_endpoint(self.env)
+            url = werkzeug.urls.url_join(endpoint, route)
             params = {
                 'dbuuid': self.env['ir.config_parameter'].sudo().get_param('database.uuid'),
                 'account_token': account.account_token,
                 'service_name': service_name,
             }
             try:
-                credit = jsonrpc(url=url, params=params)
+                credit = iap_tools.iap_jsonrpc(url=url, params=params)
             except Exception as e:
                 _logger.info('Get credit error : %s', str(e))
                 credit = -1
