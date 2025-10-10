@@ -503,6 +503,10 @@ class AccountMove(models.Model):
         invoice_lines_tax_values_dict = {}
         sign = -1 if self.is_inbound() else 1
         for invoice_line in invoice_lines:
+            taxes = invoice_line.tax_ids
+            is_0_group_tax = False
+            if len(taxes) == 1 and taxes.amount_type == 'group':
+                is_0_group_tax = True
             taxes_res = invoice_line.tax_ids.compute_all(
                 invoice_line.price_unit * (1 - (invoice_line.discount / 100.0)),
                 currency=invoice_line.currency_id,
@@ -511,6 +515,9 @@ class AccountMove(models.Model):
                 partner=invoice_line.partner_id,
                 is_refund=invoice_line.move_id.type in ('in_refund', 'out_refund'),
             )
+            if is_0_group_tax and len(taxes_res.get("taxes", [])) == 2:
+                taxes_res["taxes"][0]["amount"] = 0.0
+                del taxes_res["taxes"][1]
             tax_values_list = invoice_lines_tax_values_dict[invoice_line] = []
             rate = abs(invoice_line.balance) / abs(
                 invoice_line.amount_currency) if invoice_line.amount_currency else 0.0
