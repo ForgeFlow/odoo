@@ -602,6 +602,17 @@ class ResUsers(models.Model):
         if vals.get('active'):
             # unarchive partners before unarchiving the users
             self.partner_id.action_unarchive()
+
+        users_to_recompute = self.env['res.users']
+        new_name = vals.get('name')
+        if new_name and 'image_1920' not in vals:
+            users_to_recompute = self.sudo().filtered(
+                lambda u: not u.share
+                          and u.name != new_name
+                          and u.image_1920
+                          and u.image_1920 == u._avatar_generate_svg()
+            )
+
         if self == self.env.user:
             writeable = self._self_accessible_fields()[1]
             for key in list(vals):
@@ -641,6 +652,9 @@ class ResUsers(models.Model):
         invalidation_fields = self._get_invalidation_fields()
         if invalidation_fields & vals.keys():
             self.env.registry.clear_cache()
+
+        for user in users_to_recompute:
+            user.image_1920 = user._avatar_generate_svg()
 
         return res
 
