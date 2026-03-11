@@ -120,7 +120,7 @@ class SaleOrder(models.Model):
         for ol in self.order_line:
             if ol.is_storable:
                 product_free_qty = ol.product_id.with_context(warehouse_id=wh_id).free_qty
-                if ol.product_uom_qty > product_free_qty:
+                if ol.product_uom_qty > product_free_qty and not ol.product_id.allow_out_of_stock_order:
                     ol.shop_warning = _(
                         'Only %(new_qty)s available', new_qty=int(max(product_free_qty, 0))
                     )
