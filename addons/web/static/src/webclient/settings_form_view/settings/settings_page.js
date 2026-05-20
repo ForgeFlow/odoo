@@ -57,6 +57,17 @@ export class SettingsPage extends Component {
                 (module) => module.key === this.state.selectedTab
             );
         });
+
+        useLayoutEffect(
+            () => {
+                if (!this.env.model.root.isValid) {
+                    this.settingsRef.el
+                        ?.querySelector(".o_field_invalid")
+                        ?.scrollIntoView({ block: "center" });
+                }
+            },
+            () => [this.env.model.root.isValid]
+        );
     }
 
     get invalidApps() {
