@@ -1,5 +1,6 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from odoo.exceptions import UserError
 from odoo.tests import common, Form
 
 @common.tagged('post_install', '-at_install')
@@ -79,3 +80,65 @@ class TestDeliveryCost(common.TransactionCase):
         new_delivery_line = so.order_line.filtered('is_delivery') - delivery_line
         self.assertEqual(len(new_delivery_line), 1)
         self.assertEqual(new_delivery_line.price_unit, bo.carrier_price)
+
+    def test_delivery_real_cost_locked_so(self):
+        """Real shipping cost must be pushed onto the delivery line after
+        shipping when the SO is locked, while a regular write on the same
+        protected fields must be blocked
+        """
+        self.env.user.groups_id += self.env.ref("sale.group_auto_done_setting")
+        self.partner_18 = self.env['res.partner'].create({'name': 'My Test Customer'})
+        self.product_4 = self.env['product.product'].create({'name': 'A product to deliver', 'weight': 1.0})
+        self.product_uom_unit = self.env.ref('uom.product_uom_unit')
+
+        product_delivery = self.env['product.product'].create({
+            'name': 'Delivery Charges',
+            'type': 'service',
+            'list_price': 40.0,
+            'categ_id': self.env.ref('delivery.product_category_deliveries').id,
+        })
+        delivery_carrier = self.env['delivery.carrier'].create({
+            'name': 'Real Cost Carrier',
+            'fixed_price': 40,
+            'delivery_type': 'fixed',
+            'invoice_policy': 'real',
+            'product_id': product_delivery.id,
+            'free_over': False,
+        })
+        so = self.env['sale.order'].create({
+            'partner_id': self.partner_18.id,
+            'partner_invoice_id': self.partner_18.id,
+            'partner_shipping_id': self.partner_18.id,
+            'order_line': [(0, 0, {
+                'name': 'PC Assemble + 2GB RAM',
+                'product_id': self.product_4.id,
+                'product_uom_qty': 1,
+                'product_uom': self.product_uom_unit.id,
+                'price_unit': 120.00,
+            })],
+        })
+
+        delivery_wizard = Form(self.env['choose.delivery.carrier'].with_context({
+            'default_order_id': so.id,
+            'default_carrier_id': delivery_carrier.id,
+        }))
+        delivery_wizard.save().button_confirm()
+
+        delivery_line = so.order_line.filtered('is_delivery')
+        self.assertEqual(len(delivery_line), 1)
+        self.assertEqual(delivery_line.price_unit, 0)
+        so.action_confirm()
+        self.assertTrue(so.locked)
+
+        # Direct write on the locked delivery line (no context flag) must raise
+        with self.assertRaises(UserError):
+            delivery_line.write({'price_unit': 99.0})
+
+        # Validating the picking sets the allow_delivery_cost_update context
+        # so the real carrier price is written through the lock
+        picking = so.picking_ids[0]
+        picking.move_ids[0].quantity = 1.0
+        picking.move_ids.picked = True
+        picking._action_done()
+        self.assertEqual(picking.carrier_price, 40.0)
+        self.assertEqual(delivery_line.price_unit, picking.carrier_price)
