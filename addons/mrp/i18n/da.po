@@ -5668,12 +5668,12 @@ msgstr "Afventer tilgængelighed"
 #. module: mrp
 #: model:ir.model.fields.selection,name:mrp.selection__mrp_workorder__state__pending
 msgid "Waiting for another WO"
-msgstr "Venter på en anden arbejdsordre"
+msgstr "Afventer arbejdsordre"
 
 #. module: mrp
 #: model:ir.model.fields.selection,name:mrp.selection__mrp_workorder__state__waiting
 msgid "Waiting for components"
-msgstr ""
+msgstr "Mangler komponent"
 
 #. module: mrp
 #. odoo-python
