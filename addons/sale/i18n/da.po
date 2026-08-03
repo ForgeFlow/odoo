@@ -2289,7 +2289,7 @@ msgstr "Kundeportalens URL"
 #. module: sale
 #: model:ir.model.fields,field_description:sale.field_sale_order__client_order_ref
 msgid "Customer Reference"
-msgstr "Kundenummer"
+msgstr "Kundereference"
 
 #. module: sale
 #: model_terms:ir.ui.view,arch_db:sale.view_order_form
