@@ -4654,7 +4654,9 @@ Fields:
                     # don't pass excluded as it is not about those lines
                     old_line.copy_translations(new_line)
 
-            elif field.translate:
+            # Backport of a fix already present in newer Odoo versions:
+            # don't copy translations of fields listed in `excluded`.
+            elif field.translate and name not in excluded:
                 # for translatable fields we copy their translations
                 trans_name, source_id, target_id = get_trans(field, old, new)
                 domain = [('name', '=', trans_name), ('res_id', '=', source_id)]
