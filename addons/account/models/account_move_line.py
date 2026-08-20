@@ -2989,6 +2989,32 @@ class AccountMoveLine(models.Model):
             return company.expense_currency_exchange_account_id
         return company.income_currency_exchange_account_id
 
+    def _prepare_exchange_vals_0(self, line, sequence, amount_residual, amount_residual_currency):
+        return {
+            'name': _('Currency exchange rate difference'),
+            'debit': -amount_residual if amount_residual < 0.0 else 0.0,
+            'credit': amount_residual if amount_residual > 0.0 else 0.0,
+            'amount_currency': -amount_residual_currency,
+            'full_reconcile_id': line.full_reconcile_id.id,
+            'account_id': line.account_id.id,
+            'currency_id': line.currency_id.id,
+            'partner_id': line.partner_id.id,
+            'sequence': sequence,
+            'reconciled_lines_ids': [Command.set(line.ids)],
+        }
+
+    def _prepare_exchange_vals_1(self, line, sequence, exchange_line_account, amount_residual, amount_residual_currency):
+        return {
+            'name': _('Currency exchange rate difference'),
+            'debit': amount_residual if amount_residual > 0.0 else 0.0,
+            'credit': -amount_residual if amount_residual < 0.0 else 0.0,
+            'amount_currency': amount_residual_currency,
+            'account_id': exchange_line_account.id,
+            'currency_id': line.currency_id.id,
+            'partner_id': line.partner_id.id,
+            'sequence': sequence + 1,
+        }
+
     def _prepare_exchange_difference_move_vals(self, amounts_list, company=None, exchange_date=None, **kwargs):
         """ Prepare values to create later the exchange difference journal entry.
         The exchange difference journal entry is there to fix the debit/credit of lines when the journal items are
@@ -3045,28 +3071,8 @@ class AccountMoveLine(models.Model):
 
             sequence = len(move_vals['line_ids'])
             line_vals = [
-                {
-                    'name': _('Currency exchange rate difference'),
-                    'debit': -amount_residual if amount_residual < 0.0 else 0.0,
-                    'credit': amount_residual if amount_residual > 0.0 else 0.0,
-                    'amount_currency': -amount_residual_currency,
-                    'full_reconcile_id': line.full_reconcile_id.id,
-                    'account_id': line.account_id.id,
-                    'currency_id': line.currency_id.id,
-                    'partner_id': line.partner_id.id,
-                    'sequence': sequence,
-                    'reconciled_lines_ids': [Command.set(line.ids)],
-                },
-                {
-                    'name': _('Currency exchange rate difference'),
-                    'debit': amount_residual if amount_residual > 0.0 else 0.0,
-                    'credit': -amount_residual if amount_residual < 0.0 else 0.0,
-                    'amount_currency': amount_residual_currency,
-                    'account_id': exchange_line_account.id,
-                    'currency_id': line.currency_id.id,
-                    'partner_id': line.partner_id.id,
-                    'sequence': sequence + 1,
-                },
+                self._prepare_exchange_vals_0(line, sequence, amount_residual, amount_residual_currency),
+                self._prepare_exchange_vals_1(line, sequence, exchange_line_account, amount_residual, amount_residual_currency),
             ]
 
             if kwargs.get('exchange_analytic_distribution'):
