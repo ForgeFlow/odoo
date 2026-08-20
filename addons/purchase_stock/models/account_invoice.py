@@ -61,7 +61,7 @@ class AccountMove(models.Model):
                 # We consider there is a price difference if the subtotal is not zero. In case a
                 # discount has been applied, we can't round the price unit anymore, and hence we
                 # can't compare them.
-                if self._price_difference_is_applicable(move, line, price_subtotal, price_unit_prec):
+                if self._price_difference_is_applicable(move, line, price_subtotal, price_unit_prec, price_unit_val_dif):
                     # Add price difference account line.
                     vals = self._prepare_price_difference_account_line_vals(
                         line, move, debit_pdiff_account, price_unit_val_dif, relevant_qty)
@@ -73,9 +73,10 @@ class AccountMove(models.Model):
                     lines_vals_list.append(vals)
         return lines_vals_list
 
-    def _price_difference_is_applicable(self, move, line, price_subtotal, price_unit_prec):
+    def _price_difference_is_applicable(self, move, line, price_subtotal, price_unit_prec, price_unit_val_dif):
         return (
             not move.currency_id.is_zero(price_subtotal)
+            and not float_is_zero(price_unit_val_dif, precision_digits=price_unit_prec)
             and float_compare(line["price_unit"], line.price_unit, precision_digits=price_unit_prec) == 0
         )
 
