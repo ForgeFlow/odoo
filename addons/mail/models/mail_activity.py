@@ -272,7 +272,15 @@ class MailActivity(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        activities = super(MailActivity, self).create(vals_list)
+        # Both create and write can call action_notify: if a related field on
+        # user_id triggers a write() during the super().create() below, it
+        # would call action_notify itself, and then this method's own
+        # activities_to_notify logic further down would call it again for the
+        # same activity, sending duplicated notifications. Force writes
+        # happening inside super().create() to skip their own action_notify;
+        # this method's own notify logic below still reads the outer,
+        # unwrapped self.env.context, so it is unaffected and still fires once.
+        activities = super(MailActivity, self.with_context(mail_activity_quick_update=True)).create(vals_list)
 
         # find partners related to responsible users, separate readable from unreadable
         if any(user != self.env.user for user in activities.user_id):
