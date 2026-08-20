@@ -61,51 +61,61 @@ class AccountMove(models.Model):
                 # We consider there is a price difference if the subtotal is not zero. In case a
                 # discount has been applied, we can't round the price unit anymore, and hence we
                 # can't compare them.
-                if (
-                    not move.currency_id.is_zero(price_subtotal)
-                    and float_compare(line["price_unit"], line.price_unit, precision_digits=price_unit_prec) == 0
-                ):
-
+                if self._price_difference_is_applicable(move, line, price_subtotal, price_unit_prec):
                     # Add price difference account line.
-                    vals = {
-                        'name': line.name[:64],
-                        'move_id': move.id,
-                        'partner_id': line.partner_id.id or move.commercial_partner_id.id,
-                        'product_id': line.product_id.id,
-                        'product_uom_id': line.product_uom_id.id,
-                        'quantity': relevant_qty,
-                        'balance': line.currency_id._convert(
-                            relevant_qty * price_unit_val_dif,
-                            line.company_currency_id,
-                            line.company_id, fields.Date.today(),
-                        ),
-                        'account_id': debit_pdiff_account.id,
-                        'analytic_distribution': line.analytic_distribution,
-                        'display_type': 'cogs',
-                        'tax_ids': [],
-                    }
+                    vals = self._prepare_price_difference_account_line_vals(
+                        line, move, debit_pdiff_account, price_unit_val_dif, relevant_qty)
                     lines_vals_list.append(vals)
 
                     # Correct the amount of the current line.
-                    vals = {
-                        'name': line.name[:64],
-                        'move_id': move.id,
-                        'partner_id': line.partner_id.id or move.commercial_partner_id.id,
-                        'product_id': line.product_id.id,
-                        'product_uom_id': line.product_uom_id.id,
-                        'quantity': relevant_qty,
-                        'balance': line.currency_id._convert(
-                            relevant_qty * -price_unit_val_dif,
-                            line.company_currency_id,
-                            line.company_id, fields.Date.today(),
-                        ),
-                        'account_id': line.account_id.id,
-                        'analytic_distribution': line.analytic_distribution,
-                        'display_type': 'cogs',
-                        'tax_ids': [],
-                    }
+                    vals = self._prepare_price_difference_current_line_vals(
+                        line, move, debit_pdiff_account, price_unit_val_dif, relevant_qty)
                     lines_vals_list.append(vals)
         return lines_vals_list
+
+    def _price_difference_is_applicable(self, move, line, price_subtotal, price_unit_prec):
+        return (
+            not move.currency_id.is_zero(price_subtotal)
+            and float_compare(line["price_unit"], line.price_unit, precision_digits=price_unit_prec) == 0
+        )
+
+    def _prepare_price_difference_account_line_vals(self, line, move, debit_pdiff_account, price_unit_val_dif, relevant_qty):
+        return {
+            'name': line.name[:64],
+            'move_id': move.id,
+            'partner_id': line.partner_id.id or move.commercial_partner_id.id,
+            'product_id': line.product_id.id,
+            'product_uom_id': line.product_uom_id.id,
+            'quantity': relevant_qty,
+            'balance': line.currency_id._convert(
+                relevant_qty * price_unit_val_dif,
+                line.company_currency_id,
+                line.company_id, fields.Date.today(),
+            ),
+            'account_id': debit_pdiff_account.id,
+            'analytic_distribution': line.analytic_distribution,
+            'display_type': 'cogs',
+            'tax_ids': [],
+        }
+
+    def _prepare_price_difference_current_line_vals(self, line, move, debit_pdiff_account, price_unit_val_dif, relevant_qty):
+        return {
+            'name': line.name[:64],
+            'move_id': move.id,
+            'partner_id': line.partner_id.id or move.commercial_partner_id.id,
+            'product_id': line.product_id.id,
+            'product_uom_id': line.product_uom_id.id,
+            'quantity': relevant_qty,
+            'balance': line.currency_id._convert(
+                relevant_qty * -price_unit_val_dif,
+                line.company_currency_id,
+                line.company_id, fields.Date.today(),
+            ),
+            'account_id': line.account_id.id,
+            'analytic_distribution': line.analytic_distribution,
+            'display_type': 'cogs',
+            'tax_ids': [],
+        }
 
     def button_draft(self):
         return super().button_draft()
