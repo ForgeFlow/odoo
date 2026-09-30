@@ -1017,7 +1017,7 @@ msgstr "Styklistekomponenter"
 #: model_terms:ir.ui.view,arch_db:mrp.report_mrp_bom
 #, python-format
 msgid "BoM Cost"
-msgstr "BoM omkostninger"
+msgstr "Stykliste Kostpris"
 
 #. module: mrp
 #: model:ir.model.fields,field_description:mrp.field_stock_move__bom_line_id
