@@ -203,6 +203,10 @@ class PurchaseOrderLine(models.Model):
             sum(move_dests.filtered(lambda m: m.state != 'cancel' and m.location_dest_id.usage != 'supplier').mapped('product_qty')),
             self.product_uom_id, rounding_method='HALF-UP')
 
+    def _get_move_dests(self):
+        move_dests = self.move_dest_ids or self.move_ids.move_dest_ids
+        return move_dests.filtered(lambda m: m.state != 'cancel' and not m._is_purchase_return())
+
     def _prepare_stock_moves(self, picking):
         """ Prepare the stock moves data for one order line. This function returns a list of
         dictionary ready to be used in stock.move's create()
@@ -215,8 +219,7 @@ class PurchaseOrderLine(models.Model):
         price_unit = self._get_stock_move_price_unit()
         qty = self._get_qty_procurement()
 
-        move_dests = self.move_dest_ids or self.move_ids.move_dest_ids
-        move_dests = move_dests.filtered(lambda m: m.state != 'cancel' and not m._is_purchase_return())
+        move_dests = self._get_move_dests()
 
         qty_to_push = self.product_qty - qty
         move_dests_initial_demand = self._get_move_dests_initial_demand(move_dests)
