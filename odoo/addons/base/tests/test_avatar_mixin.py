@@ -73,3 +73,10 @@ class TestAvatarMixin(TransactionCase):
 
     def test_partner_and_user_have_the_same_avatar(self):
         self.assertEqual(self.user_without_image.partner_id.avatar_1920.content, self.user_without_image.avatar_1920.content)
+
+    def test_generated_user_avatar_follows_name_change(self):
+        user = self.env['res.users'].create({'name': 'Marc Demo', 'login': 'rename_1'})
+        user.name = 'Jan Demo'
+        self.assertIn('>J</text>', user.avatar_1920.content.decode())
+        user.partner_id.name = 'Pau Demo'
+        self.assertIn('>P</text>', user.avatar_1920.content.decode())

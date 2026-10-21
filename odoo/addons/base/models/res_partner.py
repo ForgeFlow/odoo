@@ -1015,7 +1015,13 @@ class ResPartner(models.Model):
                             self.env._("The selected company is not compatible with the companies of the related user(s)"))
                 if partner.child_ids:
                     partner.child_ids.write({'company_id': company_id})
+        if vals.get('name'):
+            generated_avatar_partners = self.filtered(
+                lambda partner: partner.image_1920 and partner.image_1920.content == partner._avatar_generate_svg().content)
         result = super().write(vals)
+        if vals.get('name'):
+            for partner in generated_avatar_partners:
+                partner.image_1920 = partner._avatar_generate_svg()
         for partner, pre_values in zip(self, pre_values_list, strict=True):
             if internal_users := partner.user_ids.filtered(lambda u: u._is_internal() and u != self.env.user):
                 internal_users.check_access('write')
